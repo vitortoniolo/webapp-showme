@@ -53,7 +53,7 @@ Desenvolver uma plataforma web que centralize a divulgação e descoberta de sho
 
 A solução será disponibilizada como uma aplicação web. O backend desenvolvido em FastAPI gerencia o cadastro de eventos, autenticação de usuários e persistência em PostgreSQL. Os usuários podem registrar novos eventos por meio de uma interface simples (Swagger para testes de API e, futuramente, frontend dedicado).  
 
-O sistema mantém os dados persistentes entre sessões, garantindo que os eventos cadastrados fiquem disponíveis mesmo após reinícios da aplicação. A aplicação também foi preparada para deploy em ambientes Kubernetes, facilitando a escalabilidade e manutenção.  
+O sistema mantém os dados persistentes entre sessões, garantindo que os eventos cadastrados fiquem disponíveis mesmo após reinícios da aplicação. 
 
 ### Exemplos de telas e fluxos
 *(espaço reservado para protótipos, mockups ou screenshots do sistema futuramente)*  
