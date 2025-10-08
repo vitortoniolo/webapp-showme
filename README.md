@@ -8,7 +8,7 @@ Na cena musical local, existe uma carência de ferramentas digitais que centrali
 
 ## Definição do Problema
 
-Na cena musical local, muitos artistas independentes enfrentam dificuldades significativas para divulgar seu trabalho e alcançar o público interessado. Segundo o estudo *Musician’s Census 2024*, 54% dos músicos responderam que o maior obstáculo em sua carreira é "fazer com que sua música seja ouvida". Além disso, shows ao vivo são a segunda maior fonte de renda para os artistas, sendo citados por 32% dos respondentes, o que evidencia a dependência de oportunidades presenciais para obtenção de receita.  
+Muitos artistas independentes enfrentam dificuldades significativas para divulgar seu trabalho e alcançar o público interessado. Segundo o estudo *Musician’s Census 2024*, 54% dos músicos responderam que o maior obstáculo em sua carreira é "fazer com que sua música seja ouvida". Além disso, shows ao vivo são a segunda maior fonte de renda para os artistas, sendo citados por 32% dos respondentes, o que evidencia a dependência de oportunidades presenciais para obtenção de receita.  
 
 Esses dados indicam que a falta de canais eficientes de divulgação limita o alcance de artistas independentes e dificulta a sustentabilidade financeira de sua atividade. Atualmente, muitos artistas dependem de redes sociais, indicações boca a boca ou plataformas de streaming, que nem sempre fornecem visibilidade suficiente, especialmente para quem atua na cena local e de pequeno porte.  
 
