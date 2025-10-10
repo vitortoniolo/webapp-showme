@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teste de demonstração</title>
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Alpine.js via CDN -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  
+</head>
+<body class="bg-gray-100 p-6">
+
+  <div class="max-w-3xl mx-auto" x-data="eventApp()">
+    <h1 class="text-3xl font-bold mb-6 text-center">Teste de demonstração</h1>
+
+    <!-- Cadastro de Evento -->
+    <div class="bg-white p-6 rounded shadow mb-6 space-y-2">
+      <h2 class="text-xl font-semibold mb-4">Cadastrar Evento</h2>
+      
+      <input x-model="nome" type="text" placeholder="Nome do evento" class="w-full border p-2 rounded">
+      <input x-model="descricao" type="text" placeholder="Descrição" class="w-full border p-2 rounded">
+      <input x-model="date" type="datetime-local" class="w-full border p-2 rounded">
+      <input x-model="city" type="text" placeholder="Cidade" class="w-full border p-2 rounded">
+      <input x-model="neighborhood" type="text" placeholder="Bairro" class="w-full border p-2 rounded">
+      <input x-model="street" type="text" placeholder="Rua" class="w-full border p-2 rounded">
+      <input x-model="number" type="text" placeholder="Número" class="w-full border p-2 rounded">
+      <input x-model="price" type="number" placeholder="Preço" class="w-full border p-2 rounded">
+      <input x-model="url" type="url" placeholder="URL" class="w-full border p-2 rounded">
+      <label class="flex items-center space-x-2">
+        <input x-model="is_free" type="checkbox">
+        <span>Gratuito</span>
+      </label>
+      <input x-model="capacity" type="number" placeholder="Capacidade" class="w-full border p-2 rounded">
+
+      <button @click="cadastrarEvento" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+        Cadastrar
+      </button>
+      <p x-text="mensagem" class="mt-2 text-green-600"></p>
+    </div>
+
+    <!-- Visualizar Eventos -->
+    <div class="bg-white p-6 rounded shadow">
+      <h2 class="text-xl font-semibold mb-4">Eventos Cadastrados</h2>
+      <button @click="carregarEventos" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 mb-4">
+        Carregar Eventos
+      </button>
+      <ul class="space-y-2">
+        <template x-for="evento in eventos" :key="evento.id">
+          <li class="border p-2 rounded bg-gray-50">
+            <strong x-text="evento.title"></strong> - <span x-text="evento.description"></span>
+            <div class="text-sm text-gray-600">
+              <span x-text="evento.date"></span> - <span x-text="evento.city"></span>, <span x-text="evento.street + ' ' + evento.number"></span>
+              <span x-text="evento.neighborhood ? ', ' + evento.neighborhood : ''"></span>
+              <span x-text="evento.is_free ? ' (Gratuito)' : ' (Pago)'"></span>
+            </div>
+          </li>
+        </template>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    function eventApp() {
+      return {
+        nome: '',
+        descricao: '',
+        date: '',
+        city: '',
+        neighborhood: '',
+        street: '',
+        number: '',
+        price: 0,
+        url: '',
+        is_free: false,
+        capacity: 0,
+        eventos: [],
+        mensagem: '',
+
+        async cadastrarEvento() {
+          if (!this.nome || !this.descricao || !this.date || !this.city || !this.street || !this.number) {
+            this.mensagem = 'Preencha todos os campos obrigatórios';
+            return;
+          }
+          let urlFinal = this.url || '';
+          if (urlFinal && !/^https?:\/\//i.test(urlFinal)) {
+            urlFinal = 'https://' + urlFinal;
+          }
+
+          try {
+            const res = await fetch('http://localhost:8000/events', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                title: this.nome,
+                description: this.descricao,
+                date: new Date(this.date).toISOString(), 
+                city: this.city,
+                neighborhood: this.neighborhood || '',
+                street: this.street,
+                number: this.number,
+                price: Number(this.price) || 0,
+                url: urlFinal,
+                is_free: Boolean(this.is_free),
+                capacity: Number(this.capacity) || 0
+              })
+
+            });
+
+            if (res.ok) {
+              this.mensagem = 'Evento cadastrado com sucesso!';
+              this.nome = '';
+              this.descricao = '';
+              this.date = '';
+              this.city = '';
+              this.neighborhood = '';
+              this.street = '';
+              this.number = '';
+              this.price = 0;
+              this.url = '';
+              this.is_free = false;
+              this.capacity = 0;
+            } else {
+              this.mensagem = 'Erro ao cadastrar evento';
+            }
+          } catch (err) {
+            this.mensagem = 'Erro ao conectar com o servidor';
+          }
+        },
+
+        async carregarEventos() {
+          try {
+            const res = await fetch('http://localhost:8000/events');
+            const data = await res.json();
+            this.eventos = data;
+          } catch (err) {
+            console.error(err);
+          }
+        }
+      }
+    }
+  </script>
+
+</body>
+</html>

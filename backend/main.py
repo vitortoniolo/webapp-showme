@@ -1,6 +1,8 @@
 # backend/main.py
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.exception_handlers import RequestValidationError
 from pydantic import BaseModel, HttpUrl
 from typing import List, Optional
 from datetime import datetime
@@ -104,7 +106,7 @@ app = FastAPI(title="ShowMe - Eventos", version="0.1.0")
 # CORS (ajuste allowed_origins conforme o front)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:5500"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -131,6 +133,7 @@ def health():
 # Create event
 @app.post("/events", response_model=EventRead, status_code=201)
 def create_event(payload: EventCreate, db: Session = Depends(get_db)):
+    print(payload) 
     db_event = Event(**payload.dict())
     db.add(db_event)
     db.commit()
@@ -162,6 +165,14 @@ def update_event(event_id: int, payload: EventUpdate, db: Session = Depends(get_
     db.commit()
     db.refresh(event)
     return event
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    print("Erro de validação:", exc.errors())
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": exc.body},
+    )
 
 # Run
 if __name__ == "__main__":
