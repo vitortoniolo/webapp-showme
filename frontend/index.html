@@ -3,146 +3,299 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Teste de demonstração</title>
+  <title>ShowMe - Encontre eventos perto de você</title>
 
   <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Alpine.js via CDN -->
-  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  
-</head>
-<body class="bg-gray-100 p-6">
-
-  <div class="max-w-3xl mx-auto" x-data="eventApp()">
-    <h1 class="text-3xl font-bold mb-6 text-center">Teste de demonstração</h1>
-
-    <!-- Cadastro de Evento -->
-    <div class="bg-white p-6 rounded shadow mb-6 space-y-2">
-      <h2 class="text-xl font-semibold mb-4">Cadastrar Evento</h2>
-      
-      <input x-model="nome" type="text" placeholder="Nome do evento" class="w-full border p-2 rounded">
-      <input x-model="descricao" type="text" placeholder="Descrição" class="w-full border p-2 rounded">
-      <input x-model="date" type="datetime-local" class="w-full border p-2 rounded">
-      <input x-model="city" type="text" placeholder="Cidade" class="w-full border p-2 rounded">
-      <input x-model="neighborhood" type="text" placeholder="Bairro" class="w-full border p-2 rounded">
-      <input x-model="street" type="text" placeholder="Rua" class="w-full border p-2 rounded">
-      <input x-model="number" type="text" placeholder="Número" class="w-full border p-2 rounded">
-      <input x-model="price" type="number" placeholder="Preço" class="w-full border p-2 rounded">
-      <input x-model="url" type="url" placeholder="URL" class="w-full border p-2 rounded">
-      <label class="flex items-center space-x-2">
-        <input x-model="is_free" type="checkbox">
-        <span>Gratuito</span>
-      </label>
-      <input x-model="capacity" type="number" placeholder="Capacidade" class="w-full border p-2 rounded">
-
-      <button @click="cadastrarEvento" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-        Cadastrar
-      </button>
-      <p x-text="mensagem" class="mt-2 text-green-600"></p>
-    </div>
-
-    <!-- Visualizar Eventos -->
-    <div class="bg-white p-6 rounded shadow">
-      <h2 class="text-xl font-semibold mb-4">Eventos Cadastrados</h2>
-      <button @click="carregarEventos" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 mb-4">
-        Carregar Eventos
-      </button>
-      <ul class="space-y-2">
-        <template x-for="evento in eventos" :key="evento.id">
-          <li class="border p-2 rounded bg-gray-50">
-            <strong x-text="evento.title"></strong> - <span x-text="evento.description"></span>
-            <div class="text-sm text-gray-600">
-              <span x-text="evento.date"></span> - <span x-text="evento.city"></span>, <span x-text="evento.street + ' ' + evento.number"></span>
-              <span x-text="evento.neighborhood ? ', ' + evento.neighborhood : ''"></span>
-              <span x-text="evento.is_free ? ' (Gratuito)' : ' (Pago)'"></span>
-            </div>
-          </li>
-        </template>
-      </ul>
-    </div>
-  </div>
-
   <script>
-    function eventApp() {
-      return {
-        nome: '',
-        descricao: '',
-        date: '',
-        city: '',
-        neighborhood: '',
-        street: '',
-        number: '',
-        price: 0,
-        url: '',
-        is_free: false,
-        capacity: 0,
-        eventos: [],
-        mensagem: '',
-
-        async cadastrarEvento() {
-          if (!this.nome || !this.descricao || !this.date || !this.city || !this.street || !this.number) {
-            this.mensagem = 'Preencha todos os campos obrigatórios';
-            return;
-          }
-          let urlFinal = this.url || '';
-          if (urlFinal && !/^https?:\/\//i.test(urlFinal)) {
-            urlFinal = 'https://' + urlFinal;
-          }
-
-          try {
-            const res = await fetch('http://localhost:8000/events', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                title: this.nome,
-                description: this.descricao,
-                date: new Date(this.date).toISOString(), 
-                city: this.city,
-                neighborhood: this.neighborhood || '',
-                street: this.street,
-                number: this.number,
-                price: Number(this.price) || 0,
-                url: urlFinal,
-                is_free: Boolean(this.is_free),
-                capacity: Number(this.capacity) || 0
-              })
-
-            });
-
-            if (res.ok) {
-              this.mensagem = 'Evento cadastrado com sucesso!';
-              this.nome = '';
-              this.descricao = '';
-              this.date = '';
-              this.city = '';
-              this.neighborhood = '';
-              this.street = '';
-              this.number = '';
-              this.price = 0;
-              this.url = '';
-              this.is_free = false;
-              this.capacity = 0;
-            } else {
-              this.mensagem = 'Erro ao cadastrar evento';
-            }
-          } catch (err) {
-            this.mensagem = 'Erro ao conectar com o servidor';
-          }
-        },
-
-        async carregarEventos() {
-          try {
-            const res = await fetch('http://localhost:8000/events');
-            const data = await res.json();
-            this.eventos = data;
-          } catch (err) {
-            console.error(err);
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: '#c1ff72',
+            'brand-dark': '#7abf2f',
+            'brand-muted': '#f3ffe1'
           }
         }
       }
     }
   </script>
 
+  <!-- Alpine.js via CDN -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-brand-muted text-slate-900" x-data="homeApp()" x-init="carregarEventos()">
+  <div class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-white/90 backdrop-blur border-b border-lime-100 sticky top-0 z-20">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-12 h-12 rounded-full border-2 border-brand border-dashed"></div>
+          <span class="text-2xl font-semibold text-slate-900">ShowMe</span>
+        </div>
+        <nav class="hidden md:flex items-center space-x-6 text-slate-700">
+          <a href="#" class="hover:text-slate-900">Home</a>
+          <a href="#eventos" class="hover:text-slate-900">Eventos</a>
+          <a href="#" class="hover:text-slate-900">Sobre</a>
+          <a href="#" class="hover:text-slate-900">Contato</a>
+        </nav>
+        <div class="flex items-center space-x-3">
+          <button class="hidden sm:inline-flex items-center px-4 py-2 rounded-full border border-brand-dark text-brand-dark font-semibold hover:bg-brand/20 transition">
+            Entrar
+          </button>
+          <button class="inline-flex items-center px-4 py-2 rounded-full bg-brand-dark text-white font-semibold shadow hover:bg-brand-dark/90 transition">
+            Cadastrar evento
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1">
+      <!-- Hero -->
+      <section class="bg-gradient-to-r from-brand via-white to-brand-muted">
+        <div class="max-w-6xl mx-auto px-4 py-16 grid gap-12 lg:grid-cols-2 items-center">
+          <div class="space-y-6">
+            <span class="inline-flex items-center px-3 py-1 text-sm font-medium bg-white/70 rounded-full border border-white/60 text-slate-700">
+              Viva experiências inesquecíveis
+            </span>
+            <h1 class="text-4xl sm:text-5xl font-bold text-slate-900 leading-tight">
+              Descubra eventos incríveis pertinho de você
+            </h1>
+            <p class="text-lg text-slate-700">
+              Explore shows, workshops, feiras e muito mais em uma plataforma feita para conectar você ao que acontece na cidade. Cadastre seus eventos e alcance mais pessoas.
+            </p>
+            <div class="flex flex-wrap gap-4">
+              <button class="px-6 py-3 rounded-full bg-brand-dark text-white font-semibold shadow-lg shadow-brand/40 hover:bg-brand-dark/90 transition">
+                Ver eventos
+              </button>
+              <button class="px-6 py-3 rounded-full border border-slate-200 text-slate-800 font-semibold hover:border-brand-dark hover:text-brand-dark transition">
+                Criar evento
+              </button>
+            </div>
+          </div>
+          <div class="w-full h-64 sm:h-80 lg:h-[26rem] rounded-3xl border-4 border-dashed border-white/80 bg-white/50"></div>
+        </div>
+      </section>
+
+      <!-- Eventos -->
+      <section id="eventos" class="max-w-6xl mx-auto px-4 py-16 space-y-8">
+        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
+          <div class="space-y-2">
+            <h2 class="text-3xl font-bold text-slate-900">Eventos próximos</h2>
+            <p class="text-slate-600">Descubra experiências selecionadas e atualizadas em tempo real.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button @click="scrollCarousel(-1)" class="h-11 w-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-white hover:text-slate-900 transition" aria-label="Eventos anteriores">
+              &#8592;
+            </button>
+            <button @click="scrollCarousel(1)" class="h-11 w-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-white hover:text-slate-900 transition" aria-label="Próximos eventos">
+              &#8594;
+            </button>
+          </div>
+        </div>
+
+        <div class="relative">
+          <div class="flex gap-6 overflow-x-auto snap-x snap-mandatory pb-6" x-ref="carousel">
+            <template x-if="eventos.length === 0">
+              <div class="min-w-[280px] max-w-xs flex-1 bg-white/70 rounded-2xl border border-white shadow-sm p-6 flex flex-col justify-between">
+                <div class="space-y-3">
+                  <h3 class="text-xl font-semibold text-slate-900">Carregando eventos</h3>
+                  <p class="text-slate-600">Estamos preparando novidades para você. Volte em instantes.</p>
+                </div>
+                <div class="mt-6 h-40 rounded-2xl border-2 border-dashed border-brand/70"></div>
+              </div>
+            </template>
+            <template x-for="evento in eventos" :key="evento.id || evento.title">
+              <article class="event-card min-w-[280px] md:min-w-[320px] lg:min-w-[360px] snap-center bg-white rounded-3xl border border-white shadow-lg shadow-brand/20 p-6 flex flex-col justify-between">
+                <div class="space-y-4">
+                  <div class="h-40 rounded-2xl border-2 border-dashed border-brand/70 bg-brand-muted/50"></div>
+                  <div class="space-y-2">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full bg-brand/60 text-slate-800 text-sm font-semibold" x-text="formatDate(evento.date)"></span>
+                    <h3 class="text-2xl font-semibold text-slate-900" x-text="evento.title"></h3>
+                    <p class="text-slate-600" x-text="evento.description"></p>
+                  </div>
+                </div>
+                <div class="mt-6 flex items-center justify-between">
+                  <div class="space-y-1">
+                    <p class="text-sm text-slate-500" x-text="formatLocation(evento)"></p>
+                    <p class="text-base font-semibold text-brand-dark" x-text="formatPrice(evento)"></p>
+                  </div>
+                  <a href="#" class="inline-flex items-center px-4 py-2 rounded-full bg-brand-dark text-white text-sm font-semibold shadow hover:bg-brand-dark/90 transition">
+                    Detalhes
+                  </a>
+                </div>
+              </article>
+            </template>
+          </div>
+          <p x-show="mensagem" x-text="mensagem" class="text-sm text-slate-600 mt-3"></p>
+        </div>
+      </section>
+
+      <!-- CTA final -->
+      <section class="max-w-5xl mx-auto px-4 pb-16">
+        <div class="rounded-3xl bg-gradient-to-r from-brand-dark to-lime-400 text-white p-10 flex flex-col lg:flex-row items-center gap-8">
+          <div class="flex-1 space-y-4">
+            <h2 class="text-3xl font-bold">Compartilhe seu evento com o mundo</h2>
+            <p class="text-lg text-white/90">
+              Cadastre seu evento em poucos minutos e alcance milhares de pessoas que buscam experiências autênticas.
+            </p>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-4">
+            <button class="px-6 py-3 rounded-full bg-white text-brand-dark font-semibold shadow hover:bg-white/90 transition">
+              Cadastrar agora
+            </button>
+            <button class="px-6 py-3 rounded-full border border-white text-white font-semibold hover:bg-white/10 transition">
+              Falar com o time
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-white py-10">
+      <div class="max-w-6xl mx-auto px-4 grid gap-8 md:grid-cols-4">
+        <div class="space-y-3">
+          <div class="w-12 h-12 rounded-full border-2 border-white/60 border-dashed"></div>
+          <p class="text-sm text-white/70">ShowMe conecta você aos melhores eventos da sua região.</p>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-3">Mapa do site</h4>
+          <ul class="space-y-2 text-sm text-white/70">
+            <li><a href="#" class="hover:text-white">Home</a></li>
+            <li><a href="#eventos" class="hover:text-white">Eventos</a></li>
+            <li><a href="#" class="hover:text-white">Sobre</a></li>
+            <li><a href="#" class="hover:text-white">Contato</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-3">Ajuda</h4>
+          <ul class="space-y-2 text-sm text-white/70">
+            <li><a href="#" class="hover:text-white">Central de suporte</a></li>
+            <li><a href="#" class="hover:text-white">Perguntas frequentes</a></li>
+            <li><a href="#" class="hover:text-white">Política de privacidade</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-3">Contato</h4>
+          <p class="text-sm text-white/70">contato@showme.com</p>
+          <p class="text-sm text-white/70">(11) 4000-0000</p>
+          <div class="mt-4 flex space-x-3">
+            <div class="w-9 h-9 rounded-full border border-white/40 border-dashed"></div>
+            <div class="w-9 h-9 rounded-full border border-white/40 border-dashed"></div>
+            <div class="w-9 h-9 rounded-full border border-white/40 border-dashed"></div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-10 border-t border-white/10 pt-4 text-center text-xs text-white/50">
+        © <span x-text="new Date().getFullYear()"></span> ShowMe. Todos os direitos reservados.
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    function homeApp() {
+      return {
+        eventos: [],
+        mensagem: '',
+        async carregarEventos() {
+          try {
+            const res = await fetch('http://localhost:8000/events');
+            if (!res.ok) throw new Error('Erro ao carregar');
+            const data = await res.json();
+            this.eventos = Array.isArray(data) && data.length ? data : this.eventosExemplo();
+            if (!Array.isArray(data) || !data.length) {
+              this.mensagem = 'Exibindo eventos demonstrativos enquanto os reais não estão disponíveis.';
+            }
+          } catch (err) {
+            console.warn(err);
+            this.eventos = this.eventosExemplo();
+            this.mensagem = 'Não foi possível conectar ao servidor. Exibindo eventos demonstrativos.';
+          }
+        },
+        eventosExemplo() {
+          return [
+            {
+              id: 'demo-1',
+              title: 'Festival de Gastronomia Sustentável',
+              description: 'Deguste pratos autorais e descubra produtores locais comprometidos com o meio ambiente.',
+              date: new Date().toISOString(),
+              city: 'São Paulo',
+              neighborhood: 'Pinheiros',
+              is_free: false,
+              price: 45.9
+            },
+            {
+              id: 'demo-2',
+              title: 'Workshop de Jardinagem Urbana',
+              description: 'Aprenda técnicas para criar hortas e jardins em pequenos espaços.',
+              date: new Date(Date.now() + 86400000 * 3).toISOString(),
+              city: 'São Paulo',
+              neighborhood: 'Vila Mariana',
+              is_free: true,
+              price: 0
+            },
+            {
+              id: 'demo-3',
+              title: 'Sunset com DJs Independentes',
+              description: 'Line-up com artistas locais e um pôr do sol inesquecível.',
+              date: new Date(Date.now() + 86400000 * 7).toISOString(),
+              city: 'Campinas',
+              neighborhood: 'Cambuí',
+              is_free: false,
+              price: 30
+            },
+            {
+              id: 'demo-4',
+              title: 'Feira Criativa Mulheres que Inspiram',
+              description: 'Produtos autorais, rodas de conversa e networking com empreendedoras.',
+              date: new Date(Date.now() + 86400000 * 10).toISOString(),
+              city: 'Santo André',
+              neighborhood: 'Centro',
+              is_free: true,
+              price: 0
+            }
+          ];
+        },
+        formatDate(dateString) {
+          if (!dateString) return 'Data a definir';
+          const date = new Date(dateString);
+          if (Number.isNaN(date.getTime())) return 'Data a definir';
+          return date.toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+          });
+        },
+        formatLocation(evento) {
+          const cidade = evento.city ? evento.city : 'Local a definir';
+          const bairro = evento.neighborhood ? ` • ${evento.neighborhood}` : '';
+          return `${cidade}${bairro}`;
+        },
+        formatPrice(evento) {
+          if (evento.is_free || Number(evento.price) === 0) {
+            return 'Evento gratuito';
+          }
+          if (!evento.price) {
+            return 'Consultar valor';
+          }
+          return Number(evento.price).toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+          });
+        },
+        scrollCarousel(direction) {
+          const container = this.$refs.carousel;
+          if (!container) return;
+          const card = container.querySelector('.event-card');
+          const cardWidth = card ? card.offsetWidth + 24 : container.clientWidth;
+          container.scrollBy({
+            left: direction * cardWidth,
+            behavior: 'smooth'
+          });
+        }
+      }
+    }
+  </script>
 </body>
 </html>
