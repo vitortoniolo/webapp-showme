@@ -1,0 +1,31 @@
+# Environment variables
+.env
+.env.*
+backend/.env
+frontend/.env
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Python caches
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Logs and local databases
+*.log
+*.sqlite3
+*.db
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local helper scripts
+scripts/

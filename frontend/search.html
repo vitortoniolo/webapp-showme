@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShowMe - Buscar eventos</title>
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: '#c1ff72',
+            'brand-dark': '#7abf2f',
+            'brand-muted': '#f3ffe1'
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Alpine.js via CDN -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-brand-muted text-slate-900" x-data="searchApp()" x-init="carregarEventos()">
+  <div class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-white/90 backdrop-blur border-b border-lime-100 sticky top-0 z-20">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-12 h-12 rounded-full border-2 border-brand border-dashed"></div>
+          <span class="text-2xl font-semibold text-slate-900">ShowMe</span>
+        </div>
+        <nav class="hidden md:flex items-center space-x-6 text-slate-700">
+          <a href="index.html" class="hover:text-slate-900">Home</a>
+          <a href="search.html" class="hover:text-slate-900">Eventos</a>
+          <a href="#" class="hover:text-slate-900">Sobre</a>
+          <a href="#" class="hover:text-slate-900">Contato</a>
+        </nav>
+        <div class="flex items-center space-x-3">
+          <button class="hidden sm:inline-flex items-center px-4 py-2 rounded-full border border-brand-dark text-brand-dark font-semibold hover:bg-brand/20 transition">
+            Entrar
+          </button>
+          <a href="create-event.html" class="inline-flex items-center px-4 py-2 rounded-full bg-brand-dark text-white font-semibold shadow hover:bg-brand-dark/90 transition">
+            Cadastrar evento
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1">
+      <section class="max-w-6xl mx-auto px-4 py-10">
+        <div class="grid gap-10 lg:grid-cols-[280px_1fr]">
+          <!-- Sidebar Filters -->
+          <aside class="bg-white rounded-3xl border border-white shadow-sm p-6 space-y-6">
+            <div>
+              <h2 class="text-xl font-semibold text-slate-900">Buscar eventos</h2>
+              <p class="text-sm text-slate-500">Use filtros para refinar os resultados.</p>
+            </div>
+            <form class="space-y-5" @submit.prevent>
+              <div>
+                <label class="text-sm font-medium text-slate-700">Palavra-chave</label>
+                <input type="search" x-model="filtros.q" placeholder="Nome, artista, estilo" class="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
+              </div>
+              <div>
+                <label class="text-sm font-medium text-slate-700">Bairro / endereço</label>
+                <input type="text" x-model="filtros.area" placeholder="Centro, Rua das Flores..." class="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-sm font-medium text-slate-700">Data inicial</label>
+                  <input type="date" x-model="filtros.startDate" class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-slate-700">Data final</label>
+                  <input type="date" x-model="filtros.endDate" class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-sm font-medium text-slate-700">Preço mínimo</label>
+                  <input type="number" x-model.number="filtros.minPrice" min="0" step="1" placeholder="R$" class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-slate-700">Preço máximo</label>
+                  <input type="number" x-model.number="filtros.maxPrice" min="0" step="1" placeholder="R$" class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
+                </div>
+              </div>
+              <div class="flex items-center space-x-3">
+                <input id="onlyFree" type="checkbox" x-model="filtros.onlyFree" class="rounded border-slate-300 text-brand-dark focus:ring-brand-dark/40">
+                <label for="onlyFree" class="text-sm text-slate-700">Mostrar apenas eventos gratuitos</label>
+              </div>
+              <button type="button" @click="resetFilters" class="w-full rounded-2xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-700 hover:bg-brand-muted">
+                Limpar filtros
+              </button>
+            </form>
+          </aside>
+
+          <!-- Results -->
+          <div class="space-y-10">
+            <section class="space-y-4">
+              <div>
+                <h2 class="text-2xl font-semibold text-slate-900">Eventos próximos de você</h2>
+                <p class="text-slate-600 text-sm">Baseado nos filtros selecionados.</p>
+              </div>
+              <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                <template x-for="evento in proximosEventos()" :key="evento.id">
+                  <article class="bg-white rounded-3xl border border-white shadow-sm p-5 flex flex-col space-y-4">
+                    <div class="h-36 rounded-2xl border-2 border-dashed border-brand/60 bg-brand-muted/70"></div>
+                    <div>
+                      <span class="text-sm font-semibold text-brand-dark" x-text="formatDate(evento.date)"></span>
+                      <h3 class="text-xl font-bold text-slate-900" x-text="evento.title"></h3>
+                      <p class="text-sm text-slate-600" x-text="formatLocation(evento)"></p>
+                    </div>
+                    <p class="text-slate-600 text-sm leading-relaxed max-h-24 overflow-hidden" x-text="evento.description || 'Sem descrição disponível.'"></p>
+                    <div class="flex items-center justify-between pt-2">
+                      <span class="text-base font-semibold text-slate-900" x-text="formatPrice(evento)"></span>
+                      <a :href="`event.html?id=${encodeURIComponent(evento.id)}`" class="text-sm font-semibold text-brand-dark hover:underline">Ver detalhes</a>
+                    </div>
+                  </article>
+                </template>
+                <template x-if="!proximosEventos().length && !loading">
+                  <div class="md:col-span-2 xl:col-span-3 rounded-3xl border border-dashed border-slate-200 bg-white/70 p-8 text-center text-slate-600">
+                    Nenhum evento encontrado para os filtros escolhidos.
+                  </div>
+                </template>
+              </div>
+            </section>
+
+            <section class="space-y-4">
+              <div>
+                <h2 class="text-2xl font-semibold text-slate-900">Eventos chegando logo</h2>
+                <p class="text-slate-600 text-sm">Ocorrências nas próximas semanas.</p>
+              </div>
+              <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                <template x-for="evento in eventosChegandoLogo()" :key="evento.id + '-soon'">
+                  <article class="bg-white rounded-3xl border border-white shadow-sm p-5 flex flex-col space-y-4">
+                    <div class="h-36 rounded-2xl border-2 border-dashed border-slate-200 bg-white/50"></div>
+                    <div>
+                      <span class="text-sm font-semibold text-slate-500" x-text="formatDate(evento.date)"></span>
+                      <h3 class="text-xl font-bold text-slate-900" x-text="evento.title"></h3>
+                      <p class="text-sm text-slate-600" x-text="formatLocation(evento)"></p>
+                    </div>
+                    <p class="text-slate-600 text-sm leading-relaxed max-h-24 overflow-hidden" x-text="evento.description || 'Sem descrição disponível.'"></p>
+                    <div class="flex items-center justify-between pt-2">
+                      <span class="text-base font-semibold text-brand-dark" x-text="formatPrice(evento)"></span>
+                      <a :href="`event.html?id=${encodeURIComponent(evento.id)}`" class="text-sm font-semibold text-slate-900 hover:underline">Abrir</a>
+                    </div>
+                  </article>
+                </template>
+                <template x-if="!eventosChegandoLogo().length && !loading">
+                  <div class="md:col-span-2 xl:col-span-3 rounded-3xl border border-dashed border-slate-200 bg-white/70 p-8 text-center text-slate-600">
+                    Nenhum evento nas próximas semanas.
+                  </div>
+                </template>
+              </div>
+            </section>
+          </div>
+        </div>
+        <div x-show="loading" class="mt-8 text-center text-slate-600">Carregando eventos...</div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-white py-10">
+      <div class="max-w-6xl mx-auto px-4 grid gap-8 md:grid-cols-4">
+        <div class="space-y-3">
+          <div class="w-12 h-12 rounded-full border-2 border-white/60 border-dashed"></div>
+          <p class="text-sm text-white/70">ShowMe conecta você aos melhores eventos da sua região.</p>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-3">Mapa do site</h4>
+          <ul class="space-y-2 text-sm text-white/70">
+            <li><a href="index.html" class="hover:text-white">Home</a></li>
+            <li><a href="index.html#eventos" class="hover:text-white">Eventos</a></li>
+            <li><a href="#" class="hover:text-white">Sobre</a></li>
+            <li><a href="#" class="hover:text-white">Contato</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-3">Ajuda</h4>
+          <ul class="space-y-2 text-sm text-white/70">
+            <li><a href="#" class="hover:text-white">Central de suporte</a></li>
+            <li><a href="#" class="hover:text-white">Perguntas frequentes</a></li>
+            <li><a href="#" class="hover:text-white">Política de privacidade</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-3">Contato</h4>
+          <p class="text-sm text-white/70">contato@showme.com</p>
+          <p class="text-sm text-white/70">(11) 4000-0000</p>
+          <div class="mt-4 flex space-x-3">
+            <div class="w-9 h-9 rounded-full border border-white/40 border-dashed"></div>
+            <div class="w-9 h-9 rounded-full border border-white/40 border-dashed"></div>
+            <div class="w-9 h-9 rounded-full border border-white/40 border-dashed"></div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-10 border-t border-white/10 pt-4 text-center text-xs text-white/50">
+        © <span x-text="new Date().getFullYear()"></span> ShowMe. Todos os direitos reservados.
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    function searchApp() {
+      return {
+        apiBase: 'http://localhost:8000',
+        eventos: [],
+        loading: true,
+        filtros: {
+          q: '',
+          area: '',
+          startDate: '',
+          endDate: '',
+          minPrice: '',
+          maxPrice: '',
+          onlyFree: false,
+        },
+        async carregarEventos() {
+          this.loading = true;
+          try {
+            const res = await fetch(`${this.apiBase}/events`);
+            if (!res.ok) throw new Error('Erro ao buscar eventos');
+            const data = await res.json();
+            this.eventos = Array.isArray(data) ? data : [];
+          } catch (err) {
+            console.warn(err);
+            this.eventos = [];
+          } finally {
+            this.loading = false;
+          }
+        },
+        resetFilters() {
+          this.filtros = { q: '', area: '', startDate: '', endDate: '', minPrice: '', maxPrice: '', onlyFree: false };
+        },
+        filteredEventos() {
+          return (this.eventos || []).filter((evento) => {
+            const title = (evento.title || '').toLowerCase();
+            const desc = (evento.description || '').toLowerCase();
+            const city = (evento.city || '').toLowerCase();
+            const neighborhood = (evento.neighborhood || '').toLowerCase();
+            const street = (evento.street || '').toLowerCase();
+            const query = this.filtros.q.toLowerCase();
+            const matchText = query ? (title.includes(query) || desc.includes(query)) : true;
+            const matchCity = this.filtros.area
+              ? neighborhood.includes(this.filtros.area.toLowerCase())
+                || street.includes(this.filtros.area.toLowerCase())
+                || city.includes(this.filtros.area.toLowerCase())
+              : true;
+            const date = evento.date ? new Date(evento.date) : null;
+            const startDate = this.filtros.startDate ? new Date(this.filtros.startDate) : null;
+            const endDate = this.filtros.endDate ? new Date(this.filtros.endDate) : null;
+            const matchStart = startDate && date ? date >= startDate : true;
+            const matchEnd = endDate && date ? date <= new Date(endDate.getTime() + 24 * 60 * 60 * 1000 - 1) : true;
+            const matchPriceMin = this.filtros.minPrice !== '' && evento.price != null
+              ? Number(evento.price) >= Number(this.filtros.minPrice)
+              : true;
+            const matchPriceMax = this.filtros.maxPrice !== '' && evento.price != null
+              ? Number(evento.price) <= Number(this.filtros.maxPrice)
+              : true;
+            const matchFree = this.filtros.onlyFree ? !!evento.is_free : true;
+
+            return matchText && matchCity && matchStart && matchEnd && matchPriceMin && matchPriceMax && matchFree;
+          }).sort((a, b) => {
+            const da = a.date ? new Date(a.date).getTime() : Infinity;
+            const db = b.date ? new Date(b.date).getTime() : Infinity;
+            return da - db;
+          });
+        },
+        proximosEventos() {
+          return this.filteredEventos().slice(0, 6);
+        },
+        eventosChegandoLogo() {
+          const now = new Date();
+          const soon = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+          return this.filteredEventos().filter((evento) => {
+            if (!evento.date) return false;
+            const date = new Date(evento.date);
+            return date >= now && date <= soon;
+          }).slice(0, 6);
+        },
+        formatDate(dateString) {
+          if (!dateString) return 'Data a definir';
+          const date = new Date(dateString);
+          if (Number.isNaN(date.getTime())) return 'Data a definir';
+          return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+        },
+        formatLocation(evento) {
+          if (evento?.neighborhood) return evento.neighborhood;
+          if (evento?.city) return evento.city;
+          return 'Bairro não informado';
+        },
+        formatPrice(evento) {
+          if (evento.is_free || Number(evento.price) === 0) return 'Evento gratuito';
+          if (evento.price == null || Number.isNaN(Number(evento.price))) return 'Consultar valor';
+          return Number(evento.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+      }
+    }
+  </script>
+</body>
+</html>

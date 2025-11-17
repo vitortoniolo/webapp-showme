@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShowMe - Detalhes do Evento</title>
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: '#c1ff72',
+            'brand-dark': '#7abf2f',
+            'brand-muted': '#f3ffe1'
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Alpine.js via CDN -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-brand-muted text-slate-900" x-data="eventPage()" x-init="init()">
+  <div class="min-h-screen flex flex-col">
+    <!-- Header (menu conforme protótipo) -->
+    <header class="bg-white/90 backdrop-blur border-b border-lime-100 sticky top-0 z-20">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-12 h-12 rounded-full border-2 border-brand border-dashed"></div>
+          <span class="text-2xl font-semibold text-slate-900">ShowMe</span>
+        </div>
+        <nav class="hidden md:flex items-center space-x-6 text-slate-700">
+          <a href="#" class="hover:text-slate-900">Home</a>
+          <a href="./search.html" class="hover:text-slate-900">Eventos</a>
+          <a href="#" class="hover:text-slate-900">Sobre</a>
+          <a href="#" class="hover:text-slate-900">Contato</a>
+        </nav>
+        <div class="flex items-center space-x-3">
+          <button class="hidden sm:inline-flex items-center px-4 py-2 rounded-full border border-brand-dark text-brand-dark font-semibold hover:bg-brand/20 transition">
+            Entrar
+          </button>
+          <a href="./create-event.html" class="inline-flex items-center px-4 py-2 rounded-full bg-brand-dark text-white font-semibold shadow hover:bg-brand-dark/90 transition">
+            Cadastrar evento
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="flex-1">
+      <section class="max-w-6xl mx-auto px-4 py-10">
+        <!-- Loading / Error -->
+        <template x-if="loading">
+          <div class="p-6 rounded-2xl bg-white/70 border border-white shadow-sm">Carregando evento…</div>
+        </template>
+        <template x-if="error">
+          <div class="p-6 rounded-2xl bg-red-50 border border-red-200 text-red-700" x-text="error"></div>
+        </template>
+
+        <!-- Layout conforme protótipo -->
+        <template x-if="!loading && !error && event">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Imagem do evento (coluna esquerda) -->
+            <div class="lg:col-span-1">
+              <div class="aspect-[4/3] w-full rounded-2xl bg-white/70 border border-white shadow-sm flex items-center justify-center overflow-hidden">
+                <template x-if="event.image_url">
+                  <img :src="event.image_url" alt="Imagem do evento" class="w-full h-full object-cover" />
+                </template>
+                <template x-if="!event.image_url">
+                  <div class="text-slate-500">Espaço para imagem do evento</div>
+                </template>
+              </div>
+            </div>
+
+            <!-- Informações principais: nome, local, horário (coluna direita topo) -->
+            <div class="lg:col-span-2">
+              <article class="rounded-2xl bg-white/80 border border-white shadow-sm p-6 sm:p-8 space-y-4">
+                <h1 class="text-3xl font-bold text-slate-900" x-text="event.title"></h1>
+                <div class="space-y-1 text-slate-700">
+                  <div><span class="font-semibold">Local:</span> <span x-text="formatFullLocation()"></span></div>
+                  <div><span class="font-semibold">Horário:</span> <span x-text="formatDateTime(event.date)"></span></div>
+                </div>
+              </article>
+            </div>
+
+            <!-- Descrição (linha de baixo, larga) -->
+            <div class="lg:col-span-2 order-2 lg:order-none">
+              <article class="rounded-2xl bg-white/80 border border-white shadow-sm p-6 sm:p-8 min-h-[220px]">
+                <p class="text-slate-700 whitespace-pre-line" x-text="event.description || 'Sem descrição disponível.'"></p>
+              </article>
+            </div>
+
+            <!-- Outras informações (painel à direita) -->
+            <aside class="lg:col-span-1 order-1 lg:order-none">
+              <div class="rounded-2xl bg-white/80 border border-white shadow-sm p-6 space-y-4">
+                <dl class="divide-y divide-slate-100">
+                  <div class="py-3 grid grid-cols-[140px_1fr] gap-3 items-start">
+                    <dt class="text-sm font-semibold text-slate-800 capitalize pr-4 whitespace-nowrap">Capacidade</dt>
+                    <dd class="text-sm text-slate-700" x-text="event.capacity ?? 'Não informado'"></dd>
+                  </div>
+                  <div class="py-3 grid grid-cols-[140px_1fr] gap-3 items-start">
+                    <dt class="text-sm font-semibold text-slate-800 capitalize pr-4 whitespace-nowrap">Preço</dt>
+                    <dd class="text-sm text-slate-700" x-text="formatPrice(event)"></dd>
+                  </div>
+                  <div class="py-3 grid grid-cols-[140px_1fr] gap-3 items-start">
+                    <dt class="text-sm font-semibold text-slate-800 capitalize pr-4 whitespace-nowrap">Tipo</dt>
+                    <dd class="text-sm text-slate-700" x-text="event.is_free ? 'Gratuito' : 'Pago'"></dd>
+                  </div>
+                  <div class="py-3 grid grid-cols-[140px_1fr] gap-3 items-start">
+                    <dt class="text-sm font-semibold text-slate-800 capitalize pr-4 whitespace-nowrap">Bairro</dt>
+                    <dd class="text-sm text-slate-700" x-text="event.neighborhood || 'Não informado'"></dd>
+                  </div>
+                  <div class="py-3 grid grid-cols-[140px_1fr] gap-3 items-start">
+                    <dt class="text-sm font-semibold text-slate-800 capitalize pr-4 whitespace-nowrap">Endereço</dt>
+                    <dd class="text-sm text-slate-700" x-text="formatAddress()"></dd>
+                  </div>
+                  <div class="py-3 grid grid-cols-[140px_1fr] gap-3 items-start">
+                    <dt class="text-sm font-semibold text-slate-800 capitalize pr-4 whitespace-nowrap">URL</dt>
+                    <dd class="text-sm text-slate-700">
+                      <template x-if="event.url">
+                        <a :href="event.url" target="_blank" rel="noopener noreferrer" class="text-brand-dark hover:underline break-words">Abrir página oficial</a>
+                      </template>
+                      <template x-if="!event.url">
+                        <span class="text-slate-900">Não informada</span>
+                      </template>
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </aside>
+          </div>
+        </template>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-white py-10">
+      <div class="max-w-6xl mx-auto px-4 grid gap-8 md:grid-cols-4">
+        <div class="space-y-3">
+          <div class="w-12 h-12 rounded-full border-2 border-white/60 border-dashed"></div>
+          <p class="text-sm text-white/70">ShowMe conecta você aos melhores eventos da sua região.</p>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-3">Mapa do site</h4>
+          <ul class="space-y-2 text-sm text-white/70">
+            <li><a href="#" class="hover:text-white">Home</a></li>
+            <li><a href="./index.html#eventos" class="hover:text-white">Eventos</a></li>
+            <li><a href="#" class="hover:text-white">Sobre</a></li>
+            <li><a href="#" class="hover:text-white">Contato</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-3">Ajuda</h4>
+          <ul class="space-y-2 text-sm text-white/70">
+            <li><a href="#" class="hover:text-white">Central de suporte</a></li>
+            <li><a href="#" class="hover:text-white">Perguntas frequentes</a></li>
+            <li><a href="#" class="hover:text-white">Política de privacidade</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-3">Contato</h4>
+          <p class="text-sm text-white/70">contato@showme.com</p>
+          <p class="text-sm text-white/70">(11) 4000-0000</p>
+          <div class="mt-4 flex space-x-3">
+            <div class="w-9 h-9 rounded-full border border-white/40 border-dashed"></div>
+            <div class="w-9 h-9 rounded-full border border-white/40 border-dashed"></div>
+            <div class="w-9 h-9 rounded-full border border-white/40 border-dashed"></div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-10 border-t border-white/10 pt-4 text-center text-xs text-white/50">
+        © <span x-text="new Date().getFullYear()"></span> ShowMe. Todos os direitos reservados.
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    function eventPage() {
+      return {
+        apiBase: 'http://localhost:8000',
+        event: null,
+        loading: true,
+        error: '',
+        init() {
+          const params = new URLSearchParams(window.location.search);
+          const id = params.get('id');
+          if (!id) {
+            this.loading = false;
+            this.error = 'Nenhum ID de evento informado. Use ?id=123 na URL.';
+            return;
+          }
+          this.fetchEvent(id);
+        },
+        async fetchEvent(id) {
+          this.loading = true;
+          this.error = '';
+          try {
+            const res = await fetch(`${this.apiBase}/events/${encodeURIComponent(id)}`);
+            if (!res.ok) {
+              if (res.status === 404) throw new Error('Evento não encontrado.');
+              throw new Error('Falha ao carregar o evento.');
+            }
+            const data = await res.json();
+            this.event = data;
+          } catch (e) {
+            console.warn(e);
+            this.error = e?.message || 'Erro inesperado ao carregar o evento.';
+          } finally {
+            this.loading = false;
+          }
+        },
+        formatDate(dateString) {
+          if (!dateString) return 'Data a definir';
+          const date = new Date(dateString);
+          if (Number.isNaN(date.getTime())) return 'Data a definir';
+          return date.toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+          });
+        },
+        formatDateTime(dateString) {
+          if (!dateString) return 'Data a definir';
+          const date = new Date(dateString);
+          if (Number.isNaN(date.getTime())) return 'Data a definir';
+          const d = date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+          const t = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+          return `${d} · ${t}`;
+        },
+        formatPrice(evento) {
+          if (evento?.is_free || Number(evento?.price) === 0) return 'Evento gratuito';
+          if (!evento?.price) return 'Consultar valor';
+          return Number(evento.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        },
+        formatFullLocation() {
+          if (!this.event) return 'Local a definir';
+          const address = [this.event.street, this.event.number].filter(Boolean).join(', ');
+          const pieces = [
+            this.event.establishment_name,
+            address,
+            this.event.neighborhood,
+            this.event.city
+          ].filter(Boolean);
+          return pieces.length ? pieces.join(' · ') : 'Local a definir';
+        },
+        formatAddress() {
+          if (!this.event) return 'Não informado';
+          const pieces = [
+            [this.event.street, this.event.number].filter(Boolean).join(', '),
+            this.event.neighborhood,
+            this.event.city
+          ].filter(Boolean);
+          return pieces.length ? pieces.join(' · ') : 'Não informado';
+        }
+      }
+    }
+  </script>
+</body>
+</html>
