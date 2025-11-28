@@ -99,6 +99,12 @@ function authMenu() {
         this.user = state?.user || null;
       });
     },
+    dashboardUrl() {
+      return 'account-dashboard.html';
+    },
+    dashboardLabel() {
+      return 'Meu painel';
+    },
     async logout() {
       this.loading = true;
       await Auth.logout();
@@ -137,7 +143,7 @@ function accountApp() {
       await Auth.login(this.loginForm.email, this.loginForm.password);
       this.success = 'Login realizado. Redirecionando para o painel...';
       setTimeout(() => {
-        window.location.href = 'admin-events.html';
+        window.location.href = 'account-dashboard.html';
       }, 1000);
     } catch (error) {
         this.error = error?.message || 'Falha ao entrar.';
@@ -157,13 +163,16 @@ function accountApp() {
       });
       this.success = 'Conta criada! Redirecionando...';
       setTimeout(() => {
-        window.location.href = 'admin-events.html';
+        window.location.href = 'account-dashboard.html';
       }, 1000);
       } catch (error) {
         this.error = error?.message || 'Falha ao criar conta.';
       } finally {
         this.loading = false;
       }
+    },
+    dashboardUrl() {
+      return 'account-dashboard.html';
     },
     async logout() {
       await Auth.logout();

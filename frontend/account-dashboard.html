@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShowMe - Meu painel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: '#c1ff72',
+            'brand-dark': '#7abf2f',
+            'brand-muted': '#f3ffe1'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    [x-cloak] { display: none !important; }
+    .line-limit-3 {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  </style>
+  <script src="js/auth.js"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-brand-muted text-slate-900" x-data="adminDashboardApp()" x-init="init()">
+  <div class="min-h-screen flex flex-col">
+    <header class="bg-white/90 backdrop-blur border-b border-lime-100 sticky top-0 z-20">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <a href="index.html" class="flex items-center space-x-3">
+          <div class="w-12 h-12 rounded-full border-2 border-brand border-dashed"></div>
+          <span class="text-2xl font-semibold text-slate-900">ShowMe</span>
+        </a>
+        <nav class="hidden md:flex items-center space-x-6 text-slate-700">
+          <a href="index.html" class="hover:text-slate-900">Home</a>
+          <a href="search.html" class="hover:text-slate-900">Eventos</a>
+          <a href="create-event.html" class="hover:text-slate-900">Criar evento</a>
+          <a href="create-establishment.html" class="hover:text-slate-900">Criar estabelecimento</a>
+        </nav>
+        <div class="flex items-center space-x-3" x-data="authMenu()" x-init="init()">
+          <template x-if="user">
+            <div class="flex items-center space-x-3">
+              <a :href="dashboardUrl()" class="inline-flex items-center px-4 py-2 rounded-full bg-brand-dark text-white font-semibold shadow hover:bg-brand-dark/90 transition">
+                <span x-text="dashboardLabel()"></span>
+              </a>
+              <button type="button" class="inline-flex items-center px-4 py-2 rounded-full border border-slate-200 text-slate-700 font-semibold hover:bg-white transition" @click="logout" :disabled="loading">
+                <span x-show="!loading">Sair</span>
+                <span x-show="loading">Saindo...</span>
+              </button>
+            </div>
+          </template>
+          <template x-if="!user">
+            <a href="account.html" class="inline-flex items-center px-4 py-2 rounded-full border border-brand-dark text-brand-dark font-semibold hover:bg-brand/20 transition">
+              Login
+            </a>
+          </template>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1">
+      <section class="max-w-6xl mx-auto px-4 py-10 space-y-8">
+        <div class="space-y-4">
+          <p class="text-sm uppercase tracking-wide text-slate-500 font-semibold">Meu painel</p>
+          <div class="flex flex-wrap items-center gap-4 justify-between">
+            <div>
+              <h1 class="text-3xl sm:text-4xl font-bold text-slate-900">Central do organizador</h1>
+              <p class="text-slate-600 max-w-2xl">Visualize rapidamente tudo o que você já cadastrou e siga os atalhos para criar novas entradas ou abrir os painéis avançados para edição detalhada.</p>
+            </div>
+            <div class="flex flex-wrap gap-3">
+              <a href="create-event.html" class="inline-flex items-center px-5 py-2.5 rounded-full bg-brand-dark text-white font-semibold shadow hover:bg-brand-dark/90 transition">Criar evento</a>
+              <a href="create-establishment.html" class="inline-flex items-center px-5 py-2.5 rounded-full border border-brand-dark text-brand-dark font-semibold hover:bg-brand/20 transition">Cadastrar estabelecimento</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-3xl border border-dashed border-brand/40 bg-brand-muted/40 px-4 py-3 space-y-2" x-show="authMessage" x-cloak>
+          <p class="text-sm text-slate-800" x-text="authMessage"></p>
+          <a href="account.html" class="inline-flex text-sm font-semibold text-brand-dark underline" x-show="!user">Fazer login</a>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-white shadow-sm overflow-hidden">
+          <div class="flex flex-wrap items-center">
+            <button type="button" class="flex-1 min-w-[160px] text-center px-6 py-4 font-semibold text-sm transition" :class="tab === 'events' ? 'bg-brand-muted/60 text-slate-900' : 'text-slate-500 hover:text-slate-800'" @click="tab = 'events'">Meus eventos</button>
+            <button type="button" class="flex-1 min-w-[160px] text-center px-6 py-4 font-semibold text-sm transition" :class="tab === 'establishments' ? 'bg-brand-muted/60 text-slate-900' : 'text-slate-500 hover:text-slate-800'" @click="tab = 'establishments'">Meus estabelecimentos</button>
+          </div>
+          <div class="border-t border-slate-100 p-6 space-y-6">
+            <div x-show="tab === 'events'">
+              <div x-show="loading.events" class="text-sm text-slate-500">Carregando eventos cadastrados...</div>
+              <p class="text-sm text-red-600" x-text="errors.events" x-show="errors.events"></p>
+              <template x-if="!loading.events && !errors.events && events.length === 0">
+                <div class="rounded-2xl border border-dashed border-slate-200 p-5 bg-brand-muted/30 space-y-2">
+                  <p class="font-semibold text-slate-800">Você ainda não cadastrou eventos.</p>
+                  <p class="text-sm text-slate-600">Publique seu primeiro evento para que ele apareça aqui.</p>
+                  <div class="flex flex-wrap gap-3">
+                    <a href="create-event.html" class="px-4 py-2 rounded-full bg-brand-dark text-white text-sm font-semibold">Criar evento agora</a>
+                    <a href="account-events.html" class="px-4 py-2 rounded-full border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-white">Abrir painel avançado</a>
+                  </div>
+                </div>
+              </template>
+              <div class="space-y-5" x-show="events.length > 0">
+                <template x-for="evento in events" :key="evento.id">
+                  <article class="rounded-3xl border border-slate-100 shadow-sm bg-white p-6 space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p class="text-xs uppercase tracking-wide text-slate-500" x-text="formatDate(evento.date)"></p>
+                        <h3 class="text-2xl font-semibold text-slate-900" x-text="evento.title || 'Evento sem título'"></h3>
+                      </div>
+                      <span class="text-sm px-3 py-1 rounded-full" :class="evento.is_free ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'" x-text="formatPrice(evento)"></span>
+                    </div>
+                    <p class="text-sm text-slate-600 line-limit-3" x-text="evento.description || 'Sem descrição detalhada.'"></p>
+                    <div class="flex flex-wrap gap-4 text-sm text-slate-500">
+                      <div class="flex items-center gap-2">
+                        <span class="font-semibold text-slate-700">Local</span>
+                        <span x-text="formatLocation(evento)"></span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="font-semibold text-slate-700">Capacidade</span>
+                        <span x-text="formatCapacity(evento.capacity)"></span>
+                      </div>
+                    </div>
+                    <div class="flex flex-wrap gap-3">
+                      <a :href="`event.html?id=${evento.id}`" class="px-4 py-2 rounded-full bg-brand-dark text-white text-sm font-semibold hover:bg-brand-dark/90 transition">Ver página pública</a>
+                      <a href="account-events.html" class="px-4 py-2 rounded-full border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-white transition">Gerenciar eventos</a>
+                    </div>
+                  </article>
+                </template>
+              </div>
+            </div>
+
+            <div x-show="tab === 'establishments'">
+              <div x-show="loading.establishments" class="text-sm text-slate-500">Carregando estabelecimentos cadastrados...</div>
+              <p class="text-sm text-red-600" x-text="errors.establishments" x-show="errors.establishments"></p>
+              <template x-if="!loading.establishments && !errors.establishments && establishments.length === 0">
+                <div class="rounded-2xl border border-dashed border-slate-200 p-5 bg-brand-muted/30 space-y-2">
+                  <p class="font-semibold text-slate-800">Você ainda não cadastrou estabelecimentos.</p>
+                  <p class="text-sm text-slate-600">Adicione um local fixo para usar novamente em novos eventos.</p>
+                  <div class="flex flex-wrap gap-3">
+                    <a href="create-establishment.html" class="px-4 py-2 rounded-full bg-brand-dark text-white text-sm font-semibold">Cadastrar estabelecimento</a>
+                    <a href="account-establishments.html" class="px-4 py-2 rounded-full border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-white">Abrir painel avançado</a>
+                  </div>
+                </div>
+              </template>
+              <div class="space-y-5" x-show="establishments.length > 0">
+                <template x-for="est in establishments" :key="est.id">
+                  <article class="rounded-3xl border border-slate-100 shadow-sm bg-white p-6 space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p class="text-xs uppercase tracking-wide text-slate-500" x-text="est.city || 'Cidade não informada'"></p>
+                        <h3 class="text-2xl font-semibold text-slate-900" x-text="est.name"></h3>
+                      </div>
+                      <span class="text-sm px-3 py-1 rounded-full bg-slate-100 text-slate-600" x-text="formatCapacity(est.capacity)"></span>
+                    </div>
+                    <p class="text-sm text-slate-600 line-limit-3" x-text="est.description || 'Sem descrição detalhada.'"></p>
+                    <div class="flex flex-wrap gap-4 text-sm text-slate-500">
+                      <div class="flex items-center gap-2">
+                        <span class="font-semibold text-slate-700">Endereço</span>
+                        <span x-text="formatLocation(est)"></span>
+                      </div>
+                    </div>
+                    <div class="flex flex-wrap gap-3">
+                      <a href="create-event.html" class="px-4 py-2 rounded-full bg-brand-dark text-white text-sm font-semibold hover:bg-brand-dark/90 transition">Criar evento neste local</a>
+                      <a href="account-establishments.html" class="px-4 py-2 rounded-full border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-white transition">Gerenciar estabelecimentos</a>
+                    </div>
+                  </article>
+                </template>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bg-slate-900 text-white mt-auto">
+      <div class="max-w-6xl mx-auto px-4 py-10 grid gap-8 md:grid-cols-3">
+        <div class="space-y-3">
+          <div class="w-12 h-12 rounded-full border-2 border-white/60 border-dashed"></div>
+          <p class="text-sm text-white/70">ShowMe conecta você aos melhores eventos independentes da sua região.</p>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-3">Navegação</h4>
+          <ul class="space-y-2 text-sm text-white/70">
+            <li><a href="index.html" class="hover:text-white">Home</a></li>
+            <li><a href="search.html" class="hover:text-white">Eventos</a></li>
+            <li><a href="create-event.html" class="hover:text-white">Criar evento</a></li>
+            <li><a href="create-establishment.html" class="hover:text-white">Criar estabelecimento</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-3">Contato</h4>
+          <a href="mailto:contato@showme.com" class="block text-sm text-white/70 hover:text-white">contato@showme.com</a>
+          <a href="tel:+551140000000" class="block text-sm text-white/70 hover:text-white">(11) 4000-0000</a>
+          <div class="mt-4 flex space-x-3">
+            <div class="w-9 h-9 rounded-full border border-white/40 border-dashed"></div>
+            <div class="w-9 h-9 rounded-full border border-white/40 border-dashed"></div>
+            <div class="w-9 h-9 rounded-full border border-white/40 border-dashed"></div>
+          </div>
+        </div>
+      </div>
+      <div class="border-t border-white/10 py-4 text-center text-xs text-white/60">
+        © <span x-text="new Date().getFullYear()"></span> ShowMe. Todos os direitos reservados.
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    function adminDashboardApp() {
+      return {
+        apiBase: 'http://localhost:8000',
+        user: Auth.getUser(),
+        tab: 'events',
+        events: [],
+        establishments: [],
+        loading: { events: false, establishments: false },
+        errors: { events: '', establishments: '' },
+        authMessage: 'Faça login para acessar o seu painel.',
+        init() {
+          this.setupAuth();
+        },
+        setupAuth() {
+          Auth.onChange((state) => {
+            const prevUser = this.user;
+            this.user = state?.user || null;
+            if (this.user) {
+              this.authMessage = '';
+              if (!prevUser || prevUser.id !== this.user.id) {
+                this.fetchEvents();
+                this.fetchEstablishments();
+              }
+            } else {
+              this.events = [];
+              this.establishments = [];
+              this.errors = { events: '', establishments: '' };
+              this.loading = { events: false, establishments: false };
+              this.authMessage = 'Faça login para acessar o seu painel.';
+            }
+          });
+          if (this.user) {
+            this.authMessage = '';
+            this.fetchEvents();
+            this.fetchEstablishments();
+          }
+        },
+        ensureAuthenticated() {
+          if (!this.user) {
+            this.authMessage = 'Sessão não encontrada. Entre na sua conta.';
+            return false;
+          }
+          return true;
+        },
+        authHeaders(extra = {}) {
+          return Auth.buildAuthHeaders(extra);
+        },
+        async fetchEvents() {
+          if (!this.ensureAuthenticated()) {
+            return;
+          }
+          this.loading.events = true;
+          this.errors.events = '';
+          try {
+            const res = await fetch(`${this.apiBase}/my/events`, { headers: this.authHeaders() });
+            if (res.status === 401) {
+              await Auth.logout();
+              throw new Error('Sessão expirada. Faça login novamente.');
+            }
+            if (!res.ok) throw new Error('Erro ao carregar seus eventos.');
+            const data = await res.json();
+            this.events = Array.isArray(data) ? data : [];
+          } catch (error) {
+            console.warn(error);
+            this.errors.events = error?.message || 'Não foi possível carregar os eventos.';
+          } finally {
+            this.loading.events = false;
+          }
+        },
+        async fetchEstablishments() {
+          if (!this.ensureAuthenticated()) {
+            return;
+          }
+          this.loading.establishments = true;
+          this.errors.establishments = '';
+          try {
+            const res = await fetch(`${this.apiBase}/my/establishments`, { headers: this.authHeaders() });
+            if (res.status === 401) {
+              await Auth.logout();
+              throw new Error('Sessão expirada. Faça login novamente.');
+            }
+            if (!res.ok) throw new Error('Erro ao carregar seus estabelecimentos.');
+            const data = await res.json();
+            this.establishments = Array.isArray(data) ? data : [];
+          } catch (error) {
+            console.warn(error);
+            this.errors.establishments = error?.message || 'Não foi possível carregar os estabelecimentos.';
+          } finally {
+            this.loading.establishments = false;
+          }
+        },
+        formatDate(dateString) {
+          if (!dateString) return 'Data a definir';
+          const date = new Date(dateString);
+          if (Number.isNaN(date.getTime())) return 'Data a definir';
+          return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+        },
+        formatLocation(item) {
+          const parts = [];
+          if (item.establishment_name) parts.push(item.establishment_name);
+          const street = item.street ? `${item.street}${item.number ? `, ${item.number}` : ''}` : null;
+          if (street) parts.push(street);
+          if (item.neighborhood) parts.push(item.neighborhood);
+          if (item.city) parts.push(item.city);
+          return parts.length ? parts.join(' · ') : 'Local não informado';
+        },
+        formatCapacity(value) {
+          if (value === null || value === undefined || value === '') return 'Capacidade livre';
+          const num = Number(value);
+          if (Number.isNaN(num) || num <= 0) return 'Capacidade livre';
+          return `${num} pessoas`;
+        },
+        formatPrice(evento) {
+          if (evento?.is_free) return 'Evento gratuito';
+          if (evento?.price === 0) return 'Evento gratuito';
+          if (evento?.price == null || Number.isNaN(Number(evento?.price))) return 'Preço não informado';
+          return Number(evento.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+      }
+    }
+  </script>
+</body>
+</html>

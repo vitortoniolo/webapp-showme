@@ -47,8 +47,8 @@
         <div class="flex items-center space-x-3" x-data="authMenu()" x-init="init()">
           <template x-if="user">
             <div class="flex items-center space-x-3">
-              <a href="admin-events.html" class="inline-flex items-center px-4 py-2 rounded-full bg-brand-dark text-white font-semibold shadow hover:bg-brand-dark/90 transition">
-                Meu painel
+              <a :href="dashboardUrl()" class="inline-flex items-center px-4 py-2 rounded-full bg-brand-dark text-white font-semibold shadow hover:bg-brand-dark/90 transition">
+                <span x-text="dashboardLabel()"></span>
               </a>
               <button type="button" class="inline-flex items-center px-4 py-2 rounded-full border border-slate-200 text-slate-700 font-semibold hover:bg-white transition" @click="logout" :disabled="loading">
                 <span x-show="!loading">Sair</span>
@@ -425,8 +425,9 @@
             .join(' • ') || 'Local não informado';
         },
         formatPrice(evento) {
-          if (evento.is_free || Number(evento.price) === 0) return 'Evento gratuito';
-          if (evento.price == null) return 'Consultar valor';
+          if (evento?.is_free) return 'Evento gratuito';
+          if (evento?.price === 0) return 'Evento gratuito';
+          if (evento?.price == null || Number.isNaN(Number(evento?.price))) return 'Preço não informado';
           return Number(evento.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         },
         openEdit(evento) {

@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShowMe - Painel administrativo (teste)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: '#c1ff72',
+            'brand-dark': '#7abf2f',
+            'brand-muted': '#f3ffe1'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    [x-cloak] { display: none !important; }
+    .line-limit-3 {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  </style>
+  <script src="js/auth.js"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-brand-muted text-slate-900" x-data="adminTestingApp()" x-init="init()">
+  <div class="min-h-screen flex flex-col">
+    <header class="bg-white/90 backdrop-blur border-b border-lime-100 sticky top-0 z-20">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <a href="index.html" class="flex items-center space-x-3">
+          <div class="w-12 h-12 rounded-full border-2 border-brand border-dashed"></div>
+          <span class="text-2xl font-semibold text-slate-900">ShowMe</span>
+        </a>
+        <nav class="hidden md:flex items-center space-x-6 text-slate-700">
+          <a href="index.html" class="hover:text-slate-900">Home</a>
+          <a href="search.html" class="hover:text-slate-900">Eventos</a>
+          <a href="create-event.html" class="hover:text-slate-900">Criar evento</a>
+          <a href="create-establishment.html" class="hover:text-slate-900">Criar estabelecimento</a>
+        </nav>
+        <div class="flex items-center space-x-3" x-data="authMenu()" x-init="init()">
+          <template x-if="user">
+            <div class="flex items-center space-x-3">
+              <a :href="dashboardUrl()" class="inline-flex items-center px-4 py-2 rounded-full bg-brand-dark text-white font-semibold shadow hover:bg-brand-dark/90 transition">
+                <span x-text="dashboardLabel()"></span>
+              </a>
+              <button type="button" class="inline-flex items-center px-4 py-2 rounded-full border border-slate-200 text-slate-700 font-semibold hover:bg-white transition" @click="logout" :disabled="loading">
+                <span x-show="!loading">Sair</span>
+                <span x-show="loading">Saindo...</span>
+              </button>
+            </div>
+          </template>
+          <template x-if="!user">
+            <a href="account.html" class="inline-flex items-center px-4 py-2 rounded-full border border-brand-dark text-brand-dark font-semibold hover:bg-brand/20 transition">
+              Login
+            </a>
+          </template>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1">
+      <section class="max-w-6xl mx-auto px-4 py-10 space-y-8">
+        <div class="space-y-3">
+          <p class="text-sm uppercase tracking-wide text-slate-500 font-semibold">Painel administrativo de teste</p>
+          <div class="flex flex-wrap items-center gap-4 justify-between">
+            <div>
+              <h1 class="text-3xl sm:text-4xl font-bold text-slate-900">Visão global do conteúdo</h1>
+              <p class="text-slate-600 max-w-2xl">
+                Esta página serve apenas como painel central em ambiente de testes: consulte e gerencie todos os eventos e estabelecimentos do site sem precisar se autenticar.
+                Caso um endpoint exija autenticação, cole manualmente um token Bearer abaixo.
+              </p>
+            </div>
+            <button type="button" class="px-4 py-2 rounded-full border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-white transition"
+              @click="syncAll" :disabled="loading.events || loading.establishments">
+              Sincronizar dados
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-white shadow-sm p-6 space-y-3">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div class="flex-1">
+              <label class="text-sm font-medium text-slate-700">Token de autenticação (Bearer)</label>
+              <input type="text" x-model="authToken" placeholder="Opcional. Cole aqui um token JWT válido para enviar requisições autenticadas."
+                class="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
+              <p class="text-xs text-slate-500 mt-1">Sem token enviaremos requisições públicas. Use apenas tokens de desenvolvimento.</p>
+            </div>
+            <div class="text-sm text-slate-600 space-y-1">
+              <p><strong>API base:</strong> <span x-text="apiBase"></span></p>
+              <p>Eventos carregados: <span x-text="events.length"></span> · Estabelecimentos: <span x-text="establishments.length"></span></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-white shadow-sm overflow-hidden">
+          <div class="flex flex-wrap items-center">
+            <button type="button" class="flex-1 min-w-[160px] text-center px-6 py-4 font-semibold text-sm transition"
+              :class="tab === 'events' ? 'bg-brand-muted/60 text-slate-900' : 'text-slate-500 hover:text-slate-800'" @click="tab = 'events'">
+              Eventos
+            </button>
+            <button type="button" class="flex-1 min-w-[160px] text-center px-6 py-4 font-semibold text-sm transition"
+              :class="tab === 'establishments' ? 'bg-brand-muted/60 text-slate-900' : 'text-slate-500 hover:text-slate-800'" @click="tab = 'establishments'">
+              Estabelecimentos
+            </button>
+          </div>
+
+          <div class="border-t border-slate-100 p-6 space-y-6">
+            <template x-if="tab === 'events'">
+              <div>
+                <div class="flex flex-wrap gap-4 items-center justify-between">
+                  <div class="flex flex-wrap gap-3 items-center">
+                    <input type="search" x-model="eventFilters.q" placeholder="Buscar por título, descrição ou cidade"
+                      class="rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 w-full sm:w-72">
+                    <label class="inline-flex items-center gap-2 text-sm text-slate-600">
+                      <input type="checkbox" class="rounded border-slate-300 text-brand-dark focus:ring-brand-dark/40" x-model="eventFilters.onlyFree">
+                      Mostrar apenas gratuitos
+                    </label>
+                  </div>
+                  <div class="flex flex-wrap gap-3 text-sm">
+                    <span class="text-slate-600" x-show="loading.events">Carregando eventos...</span>
+                    <span class="text-red-600" x-show="errors.events" x-text="errors.events"></span>
+                    <span :class="alerts.events.type === 'error' ? 'text-red-600' : 'text-emerald-600'" x-show="alerts.events.message" x-text="alerts.events.message"></span>
+                  </div>
+                </div>
+                <template x-if="!filteredEvents().length && !loading.events">
+                  <div class="rounded-2xl border border-dashed border-slate-200 p-5 bg-brand-muted/30 text-sm text-slate-600 mt-4">
+                    Nenhum evento corresponde aos filtros atuais.
+                  </div>
+                </template>
+                <div class="space-y-5 mt-5">
+                  <template x-for="evento in filteredEvents()" :key="evento.id">
+                    <article class="rounded-3xl border border-slate-100 shadow-sm bg-white p-6 space-y-4">
+                      <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p class="text-xs uppercase tracking-wide text-slate-500" x-text="formatDate(evento.date)"></p>
+                          <h3 class="text-2xl font-semibold text-slate-900" x-text="# · " + (evento.title || 'Evento sem título')"></h3>
+                          <p class="text-sm text-slate-600" x-text="formatLocation(evento)"></p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                          <a :href="event.html?id=" class="px-4 py-2 rounded-full border border-slate-200 text-sm font-semibold hover:bg-white transition" target="_blank" rel="noopener noreferrer">Ver página pública</a>
+                          <button type="button" class="px-4 py-2 rounded-full border border-slate-200 text-sm font-semibold hover:bg-brand-muted" @click="openEventEdit(evento)">Editar</button>
+                          <button type="button" class="px-4 py-2 rounded-full border border-red-200 text-sm font-semibold text-red-600 hover:bg-red-50"
+                            @click="deleteEvent(evento)" :disabled="deletingEventId === evento.id">
+                            <span x-show="deletingEventId !== evento.id">Excluir</span>
+                            <span x-show="deletingEventId === evento.id">Excluindo...</span>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="flex flex-wrap gap-3 text-sm text-slate-600">
+                        <span class="px-3 py-1 rounded-full bg-brand-muted/60 border border-brand/40 text-slate-800" x-text="formatPrice(evento)"></span>
+                        <span class="px-3 py-1 rounded-full bg-slate-100 border border-slate-200" x-text="evento.is_free ? 'Gratuito' : 'Pago'"></span>
+                        <span class="px-3 py-1 rounded-full bg-slate-100 border border-slate-200" x-text="formatCapacity(evento.capacity)"></span>
+                      </div>
+                      <div x-show="editingEventId === evento.id" x-cloak class="border-t border-slate-100 pt-4">
+                        <form class="space-y-5" @submit.prevent="saveEvent">
+                          <div class="grid gap-4 md:grid-cols-2">
+                            <label class="flex flex-col gap-1 text-sm font-medium text-slate-700">Título *
+                              <input type="text" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="eventForm.title" required>
+                            </label>
+                            <label class="flex flex-col gap-1 text-sm font-medium text-slate-700">Data e horário
+                              <input type="datetime-local" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="eventForm.date">
+                            </label>
+                            <label class="flex flex-col gap-1 text-sm font-medium text-slate-700">Preço
+                              <input type="number" min="0" step="0.01" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="eventForm.price">
+                            </label>
+                            <label class="flex flex-col gap-1 text-sm font-medium text-slate-700">URL oficial
+                              <input type="url" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="eventForm.url">
+                            </label>
+                          </div>
+                          <label class="flex flex-col gap-1 text-sm font-medium text-slate-700">Descrição
+                            <textarea rows="4" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="eventForm.description"></textarea>
+                          </label>
+                          <div class="grid gap-4 md:grid-cols-2">
+                            <label class="flex flex-col gap-1 text-sm font-medium text-slate-700">Imagem (URL)
+                              <input type="url" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="eventForm.image_url">
+                            </label>
+                            <label class="flex flex-col gap-1 text-sm font-medium text-slate-700">Evento gratuito?
+                              <select class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="eventForm.is_free">
+                                <option :value="false">Não</option>
+                                <option :value="true">Sim</option>
+                              </select>
+                            </label>
+                          </div>
+                          <div class="grid gap-4 md:grid-cols-2">
+                            <label class="flex flex-col gap-1 text-sm font-medium text-slate-700">Cidade
+                              <input type="text" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="eventForm.city">
+                            </label>
+                            <label class="flex flex-col gap-1 text-sm font-medium text-slate-700">Bairro
+                              <input type="text" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="eventForm.neighborhood">
+                            </label>
+                          </div>
+                          <div class="grid gap-4 md:grid-cols-[2fr_1fr]">
+                            <label class="flex flex-col gap-1 text-sm font-medium text-slate-700">Rua / avenida
+                              <input type="text" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="eventForm.street">
+                            </label>
+                            <label class="flex flex-col gap-1 text-sm font-medium text-slate-700">Número
+                              <input type="text" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="eventForm.number">
+                            </label>
+                          </div>
+                          <div class="grid gap-4 md:grid-cols-2">
+                            <label class="flex flex-col gap-1 text-sm font-medium text-slate-700">Nome do local
+                              <input type="text" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="eventForm.establishment_name">
+                            </label>
+                            <label class="flex flex-col gap-1 text-sm font-medium text-slate-700">Capacidade
+                              <input type="number" min="0" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="eventForm.capacity">
+                            </label>
+                          </div>
+                          <div class="flex flex-wrap gap-3">
+                            <button type="submit" class="px-5 py-2.5 rounded-full bg-brand-dark text-white font-semibold shadow hover:bg-brand-dark/90" :disabled="savingEvent">
+                              <span x-show="!savingEvent">Salvar alterações</span>
+                              <span x-show="savingEvent">Salvando...</span>
+                            </button>
+                            <button type="button" class="px-5 py-2.5 rounded-full border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-white" @click="cancelEventEdit" :disabled="savingEvent">Cancelar</button>
+                          </div>
+                        </form>
+                      </div>
+                    </article>
+                  </template>
+                </div>
+              </div>
+            </template>
+
+            <template x-if="tab === 'establishments'">
+              <div>
+                <div class="flex flex-wrap gap-4 items-center justify-between">
+                  <input type="search" x-model="establishmentFilters.q" placeholder="Buscar por nome, bairro ou cidade"
+                    class="rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 w-full sm:w-80">
+                  <div class="flex flex-wrap gap-3 text-sm">
+                    <span class="text-slate-600" x-show="loading.establishments">Carregando estabelecimentos...</span>
+                    <span class="text-red-600" x-show="errors.establishments" x-text="errors.establishments"></span>
+                    <span :class="alerts.establishments.type === 'error' ? 'text-red-600' : 'text-emerald-600'" x-show="alerts.establishments.message" x-text="alerts.establishments.message"></span>
+                  </div>
+                </div>
+                <template x-if="!filteredEstablishments().length && !loading.establishments">
+                  <div class="rounded-2xl border border-dashed border-slate-200 p-5 bg-brand-muted/30 text-sm text-slate-600 mt-4">
+                    Nenhum estabelecimento corresponde aos filtros atuais.
+                  </div>
+                </template>
+                <div class="space-y-5 mt-5">
+                  <template x-for="est in filteredEstablishments()" :key="est.id">
+                    <article class="rounded-3xl border border-slate-100 shadow-sm bg-white p-6 space-y-4">
+                      <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p class="text-xs uppercase tracking-wide text-slate-500" x-text="est.city || 'Cidade não informada'"></p>
+                          <h3 class="text-2xl font-semibold text-slate-900" x-text="# · "></h3>
+                          <p class="text-sm text-slate-600" x-text="formatLocation(est)"></p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                          <button type="button" class="px-4 py-2 rounded-full border border-slate-200 text-sm font-semibold hover:bg-brand-muted" @click="openEstablishmentEdit(est)">Editar</button>
+                          <button type="button" class="px-4 py-2 rounded-full border border-red-200 text-sm font-semibold text-red-600 hover:bg-red-50"
+                            @click="deleteEstablishment(est)" :disabled="deletingEstablishmentId === est.id">
+                            <span x-show="deletingEstablishmentId !== est.id">Excluir</span>
+                            <span x-show="deletingEstablishmentId === est.id">Excluindo...</span>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="flex flex-wrap gap-3 text-sm text-slate-600">
+                        <span class="px-3 py-1 rounded-full bg-slate-100 border border-slate-200" x-text="est.neighborhood || 'Bairro não informado'"></span>
+                        <span class="px-3 py-1 rounded-full bg-brand-muted/60 border border-brand/40 text-slate-800" x-text="formatCapacity(est.capacity)"></span>
+                      </div>
+                      <div class="flex flex-col gap-4 md:flex-row">
+                        <div class="w-full md:w-48 h-40 rounded-2xl border-2 border-dashed border-brand/50 bg-brand-muted/60 overflow-hidden">
+                          <template x-if="est.image_url">
+                            <img :src="est.image_url" alt="" class="w-full h-full object-cover">
+                          </template>
+                          <div class="w-full h-full flex items-center justify-center text-slate-400 text-sm" x-show="!est.image_url">Sem imagem</div>
+                        </div>
+                        <p class="flex-1 text-sm text-slate-600 line-limit-3" x-text="est.description || 'Sem descrição cadastrada.'"></p>
+                      </div>
+                      <div x-show="editingEstablishmentId === est.id" x-cloak class="border-t border-slate-100 pt-4">
+                        <form class="space-y-5" @submit.prevent="saveEstablishment">
+                          <div class="grid gap-4 md:grid-cols-2">
+                            <label class="flex flex-col gap-1 text-sm font-medium text-slate-700">Nome *
+                              <input type="text" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="establishmentForm.name" required>
+                            </label>
+                            <label class="flex flex-col gap-1 text-sm font-medium text-slate-700">Imagem (URL)
+                              <input type="url" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="establishmentForm.image_url">
+                            </label>
+                          </div>
+                          <label class="flex flex-col gap-1 text-sm font-medium text-slate-700">Descrição
+                            <textarea rows="4" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="establishmentForm.description"></textarea>
+                          </label>
+                          <div class="grid gap-4 md:grid-cols-2">
+                            <label class="flex flex-col gap-1 text-sm font-medium text-slate-700">Cidade
+                              <input type="text" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="establishmentForm.city">
+                            </label>
+                            <label class="flex flex-col gap-1 text-sm font-medium text-slate-700">Bairro
+                              <input type="text" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="establishmentForm.neighborhood">
+                            </label>
+                            <label class="flex flex-col gap-1 text-sm font-medium text-slate-700">Rua
+                              <input type="text" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="establishmentForm.street">
+                            </label>
+                            <label class="flex flex-col gap-1 text-sm font-medium text-slate-700">Número
+                              <input type="text" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="establishmentForm.number">
+                            </label>
+                          </div>
+                          <label class="flex flex-col gap-1 text-sm font-medium text-slate-700">Capacidade
+                            <input type="number" min="0" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="establishmentForm.capacity">
+                          </label>
+                          <div class="flex flex-wrap gap-3">
+                            <button type="submit" class="px-5 py-2.5 rounded-full bg-brand-dark text-white font-semibold shadow hover:bg-brand-dark/90" :disabled="savingEstablishment">
+                              <span x-show="!savingEstablishment">Salvar alterações</span>
+                              <span x-show="savingEstablishment">Salvando...</span>
+                            </button>
+                            <button type="button" class="px-5 py-2.5 rounded-full border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-white"
+                              @click="cancelEstablishmentEdit" :disabled="savingEstablishment">Cancelar</button>
+                          </div>
+                        </form>
+                      </div>
+                    </article>
+                  </template>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bg-slate-900 text-white mt-auto">
+      <div class="max-w-6xl mx-auto px-4 py-10 grid gap-8 md:grid-cols-3">
+        <div class="space-y-3">
+          <div class="w-12 h-12 rounded-full border-2 border-white/60 border-dashed"></div>
+          <p class="text-sm text-white/70">ShowMe conecta você aos melhores eventos independentes da sua região.</p>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-3">Navegação</h4>
+          <ul class="space-y-2 text-sm text-white/70">
+            <li><a href="index.html" class="hover:text-white">Home</a></li>
+            <li><a href="search.html" class="hover:text-white">Eventos</a></li>
+            <li><a href="create-event.html" class="hover:text-white">Criar evento</a></li>
+            <li><a href="create-establishment.html" class="hover:text-white">Criar estabelecimento</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-3">Contato</h4>
+          <a href="mailto:contato@showme.com" class="block text-sm text-white/70 hover:text-white">contato@showme.com</a>
+          <a href="tel:+551140000000" class="block text-sm text-white/70 hover:text-white">(11) 4000-0000</a>
+          <div class="mt-4 flex space-x-3">
+            <div class="w-9 h-9 rounded-full border border-white/40 border-dashed"></div>
+            <div class="w-9 h-9 rounded-full border border-white/40 border-dashed"></div>
+            <div class="w-9 h-9 rounded-full border border-white/40 border-dashed"></div>
+          </div>
+        </div>
+      </div>
+      <div class="border-t border-white/10 py-4 text-center text-xs text-white/60">
+        © <span x-text="new Date().getFullYear()"></span> ShowMe. Todos os direitos reservados.
+      </div>
+    </footer>
+  </div>
+
+
+  <script>
+    function adminTestingApp() {
+      return {
+        apiBase: 'http://localhost:8000',
+        authToken: '',
+        tab: 'events',
+        events: [],
+        establishments: [],
+        eventFilters: { q: '', onlyFree: false },
+        establishmentFilters: { q: '' },
+        loading: { events: false, establishments: false },
+        errors: { events: '', establishments: '' },
+        alerts: {
+          events: { type: '', message: '' },
+          establishments: { type: '', message: '' }
+        },
+        editingEventId: null,
+        editingEstablishmentId: null,
+        deletingEventId: null,
+        deletingEstablishmentId: null,
+        savingEvent: false,
+        savingEstablishment: false,
+        eventForm: {},
+        establishmentForm: {},
+        init() {
+          this.fetchAllEvents();
+          this.fetchAllEstablishments();
+        },
+        syncAll() {
+          this.fetchAllEvents();
+          this.fetchAllEstablishments();
+        },
+        authHeaders(extra = {}) {
+          const headers = { ...extra };
+          const token = (this.authToken || '').trim();
+          if (token) headers.Authorization = `Bearer ${token}`;
+          return headers;
+        },
+        async fetchAllEvents() {
+          this.loading.events = true;
+          this.errors.events = '';
+          this.alerts.events = { type: '', message: '' };
+          try {
+            const res = await fetch(`${this.apiBase}/events`);
+            if (!res.ok) throw new Error('Erro ao carregar eventos.');
+            const data = await res.json();
+            this.events = Array.isArray(data) ? data : [];
+          } catch (error) {
+            console.warn(error);
+            this.errors.events = error?.message || 'N?o foi poss?vel carregar os eventos.';
+          } finally {
+            this.loading.events = false;
+          }
+        },
+        async fetchAllEstablishments() {
+          this.loading.establishments = true;
+          this.errors.establishments = '';
+          this.alerts.establishments = { type: '', message: '' };
+          try {
+            const res = await fetch(`${this.apiBase}/establishments`);
+            if (!res.ok) throw new Error('Erro ao carregar estabelecimentos.');
+            const data = await res.json();
+            this.establishments = Array.isArray(data) ? data : [];
+          } catch (error) {
+            console.warn(error);
+            this.errors.establishments = error?.message || 'N?o foi poss?vel carregar os estabelecimentos.';
+          } finally {
+            this.loading.establishments = false;
+          }
+        },
+        filteredEvents() {
+          return (this.events || []).filter((evento) => {
+            const query = (this.eventFilters.q || '').toLowerCase();
+            const searchTarget = [
+              evento.title,
+              evento.description,
+              evento.city,
+              evento.neighborhood,
+              evento.establishment_name
+            ].map((value) => (value || '').toLowerCase());
+            const matchesText = query ? searchTarget.some((field) => field.includes(query)) : true;
+            const matchesFree = this.eventFilters.onlyFree ? !!evento.is_free : true;
+            return matchesText && matchesFree;
+          }).sort((a, b) => {
+            const da = a.date ? new Date(a.date).getTime() : Infinity;
+            const db = b.date ? new Date(b.date).getTime() : Infinity;
+            return da - db;
+          });
+        },
+        filteredEstablishments() {
+          const query = (this.establishmentFilters.q || '').toLowerCase();
+          return (this.establishments || []).filter((est) => {
+            const searchTarget = [
+              est.name,
+              est.description,
+              est.city,
+              est.neighborhood,
+              est.street
+            ].map((value) => (value || '').toLowerCase());
+            return query ? searchTarget.some((field) => field.includes(query)) : true;
+          }).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        },
+        openEventEdit(evento) {
+          this.editingEventId = evento.id;
+          this.eventForm = {
+            id: evento.id,
+            title: evento.title || '',
+            description: evento.description || '',
+            date: evento.date ? this.toDatetimeLocal(evento.date) : '',
+            price: evento.price ?? '',
+            url: evento.url || '',
+            image_url: evento.image_url || '',
+            establishment_id: evento.establishment_id ?? '',
+            establishment_name: evento.establishment_name || '',
+            city: evento.city || '',
+            neighborhood: evento.neighborhood || '',
+            street: evento.street || '',
+            number: evento.number || '',
+            capacity: evento.capacity ?? '',
+            is_free: evento.is_free || false,
+          };
+        },
+        cancelEventEdit() {
+          this.editingEventId = null;
+          this.eventForm = {};
+        },
+        toDatetimeLocal(dateString) {
+          const date = new Date(dateString);
+          if (Number.isNaN(date.getTime())) return '';
+          const tzOffset = date.getTimezoneOffset();
+          const local = new Date(date.getTime() - tzOffset * 60000);
+          return local.toISOString().slice(0, 16);
+        },
+        normalizeNumber(value) {
+          if (value === '' || value === null || value === undefined) return null;
+          const num = Number(value);
+          return Number.isNaN(num) ? null : num;
+        },
+        buildEventPayload() {
+          const cleanText = (value) => {
+            if (typeof value === 'string') {
+              const trimmed = value.trim();
+              return trimmed.length ? trimmed : null;
+            }
+            return value ?? null;
+          };
+          return {
+            title: cleanText(this.eventForm.title) || '',
+            description: cleanText(this.eventForm.description),
+            date: this.eventForm.date ? new Date(this.eventForm.date).toISOString() : null,
+            price: this.normalizeNumber(this.eventForm.price),
+            url: cleanText(this.eventForm.url),
+            image_url: cleanText(this.eventForm.image_url),
+            establishment_id: this.eventForm.establishment_id === '' ? null : Number(this.eventForm.establishment_id),
+            establishment_name: cleanText(this.eventForm.establishment_name),
+            city: cleanText(this.eventForm.city),
+            neighborhood: cleanText(this.eventForm.neighborhood),
+            street: cleanText(this.eventForm.street),
+            number: cleanText(this.eventForm.number),
+            capacity: this.normalizeNumber(this.eventForm.capacity),
+            is_free: this.eventForm.is_free === true || this.eventForm.is_free === 'true',
+          };
+        },
+        async saveEvent() {
+          if (!this.editingEventId) return;
+          this.savingEvent = true;
+          this.alerts.events = { type: '', message: '' };
+          try {
+            const payload = this.buildEventPayload();
+            const res = await fetch(`${this.apiBase}/events/${encodeURIComponent(this.editingEventId)}`, {
+              method: 'PUT',
+              headers: this.authHeaders({ 'Content-Type': 'application/json' }),
+              body: JSON.stringify(payload)
+            });
+            if (res.status === 401) throw new Error('Token inv?lido ou ausente.');
+            if (!res.ok) {
+              const errMsg = await res.text();
+              throw new Error(errMsg || 'Erro ao salvar evento.');
+            }
+            await this.fetchAllEvents();
+            this.alerts.events = { type: 'success', message: 'Evento atualizado com sucesso.' };
+            this.cancelEventEdit();
+          } catch (error) {
+            console.warn(error);
+            this.alerts.events = { type: 'error', message: error?.message || 'Falha ao salvar evento.' };
+          } finally {
+            this.savingEvent = false;
+          }
+        },
+        async deleteEvent(evento) {
+          if (!evento?.id) return;
+          if (!confirm(`Deseja excluir "${evento.title || 'este evento'}"?`)) return;
+          this.deletingEventId = evento.id;
+          this.alerts.events = { type: '', message: '' };
+          try {
+            const res = await fetch(`${this.apiBase}/events/${encodeURIComponent(evento.id)}`, {
+              method: 'DELETE',
+              headers: this.authHeaders()
+            });
+            if (res.status === 401) throw new Error('Token inv?lido ou ausente.');
+            if (!res.ok) throw new Error('Erro ao excluir evento.');
+            this.events = this.events.filter((item) => item.id !== evento.id);
+            this.alerts.events = { type: 'success', message: 'Evento exclu?do.' };
+            if (this.editingEventId === evento.id) {
+              this.cancelEventEdit();
+            }
+          } catch (error) {
+            console.warn(error);
+            this.alerts.events = { type: 'error', message: error?.message || 'Falha ao excluir evento.' };
+          } finally {
+            this.deletingEventId = null;
+          }
+        },
+        openEstablishmentEdit(est) {
+          this.editingEstablishmentId = est.id;
+          this.establishmentForm = {
+            id: est.id,
+            name: est.name || '',
+            description: est.description || '',
+            image_url: est.image_url || '',
+            city: est.city || '',
+            neighborhood: est.neighborhood || '',
+            street: est.street || '',
+            number: est.number || '',
+            capacity: est.capacity ?? '',
+          };
+        },
+        cancelEstablishmentEdit() {
+          this.editingEstablishmentId = null;
+          this.establishmentForm = {};
+        },
+        buildEstablishmentPayload() {
+          const cleanText = (value) => {
+            if (typeof value === 'string') {
+              const trimmed = value.trim();
+              return trimmed.length ? trimmed : null;
+            }
+            return value ?? null;
+          };
+          return {
+            name: cleanText(this.establishmentForm.name) || '',
+            description: cleanText(this.establishmentForm.description),
+            image_url: cleanText(this.establishmentForm.image_url),
+            city: cleanText(this.establishmentForm.city),
+            neighborhood: cleanText(this.establishmentForm.neighborhood),
+            street: cleanText(this.establishmentForm.street),
+            number: cleanText(this.establishmentForm.number),
+            capacity: this.normalizeNumber(this.establishmentForm.capacity),
+          };
+        },
+        async saveEstablishment() {
+          if (!this.editingEstablishmentId) return;
+          this.savingEstablishment = true;
+          this.alerts.establishments = { type: '', message: '' };
+          try {
+            const payload = this.buildEstablishmentPayload();
+            const res = await fetch(`${this.apiBase}/establishments/${encodeURIComponent(this.editingEstablishmentId)}`, {
+              method: 'PUT',
+              headers: this.authHeaders({ 'Content-Type': 'application/json' }),
+              body: JSON.stringify(payload)
+            });
+            if (res.status === 401) throw new Error('Token inv?lido ou ausente.');
+            if (!res.ok) {
+              const errMsg = await res.text();
+              throw new Error(errMsg || 'Erro ao salvar estabelecimento.');
+            }
+            await this.fetchAllEstabelecimentos();
+            this.alerts.estabelecimentos = { type: 'success', message: 'Estabelecimento atualizado.' };
+            this.cancelEstabelecimentoEdit();
+          } catch (error) {
+            console.warn(error);
+            this.alerts.estabelecimentos = { type: 'error', message: error?.message || 'Falha ao salvar estabelecimento.' };
+          } finally {
+            this.savingEstabelecimento = false;
+          }
+        },
+        async deleteEstablishment(est) {
+          if (!est?.id) return;
+          if (!confirm(`Deseja excluir "${est.name || 'este estabelecimento'}"?`)) return;
+          this.deletingEstablishmentId = est.id;
+          this.alerts.establishments = { type: '', message: '' };
+          try {
+            const res = await fetch(`${this.apiBase}/establishments/${encodeURIComponent(est.id)}`, {
+              method: 'DELETE',
+              headers: this.authHeaders()
+            });
+            if (res.status === 401) throw new Error('Token inv?lido ou ausente.');
+            if (!res.ok) throw new Error('Erro ao excluir estabelecimento.');
+            this.establishments = this.establishments.filter((item) => item.id !== est.id);
+            this.alerts.establishments = { type: 'success', message: 'Estabelecimento exclu?do.' };
+            if (this.editingEstablishmentId === est.id) {
+              this.cancelEstablishmentEdit();
+            }
+          } catch (error) {
+            console.warn(error);
+            this.alerts.estabelecimentos = { type: 'error', message: error?.message ou 'Falha ao excluir estabelecimento.' };
+          } finally {
+            this.deletingEstablishmentId = null;
+          }
+        },
+        formatDate(dateString) {
+          if (!dateString) return 'Data a definir';
+          const date = new Date(dateString);
+          if (Number.isNaN(date.getTime())) return 'Data a definir';
+          return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+        },
+        formatLocation(item) {
+          const parts = [];
+          if (item.establishment_name) parts.push(item.establishment_name);
+          const street = item.street ? `${item.street}${item.number ? `, ${item.number}` : ''}` : null;
+          if (street) parts.push(street);
+          if (item.neighborhood) parts.push(item.neighborhood);
+          if (item.city) parts.push(item.city);
+          return parts.length ? parts.join(' ? ') : 'Local n?o informado';
+        },
+        formatCapacity(value) {
+          if (value === null || value === undefined || value === '') return 'Capacidade livre';
+          const num = Number(value);
+          if (Number.isNaN(num) || num <= 0) return 'Capacidade livre';
+          return `${num} pessoas`;
+        },
+        formatPrice(evento) {
+          if (evento?.is_free) return 'Evento gratuito';
+          if (evento?.price === 0) return 'Evento gratuito';
+          if (evento?.price == null || Number.isNaN(Number(evento?.price))) return 'Pre?o n?o informado';
+          return Number(evento.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+      };
+    }
+  </script>
+</body>
+</html>
+

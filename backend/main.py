@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exception_handlers import RequestValidationError
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel, HttpUrl, EmailStr, ConfigDict
+from pydantic import BaseModel, HttpUrl, EmailStr, ConfigDict, Field
 from typing import List, Optional
 from datetime import datetime
 from dotenv import load_dotenv
@@ -31,6 +31,11 @@ from sqlalchemy.orm import sessionmaker, declarative_base, Session, relationship
 
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
+ADMIN_EMAILS = {
+    email.strip().lower()
+    for email in (os.getenv("ADMIN_EMAILS") or "").split(",")
+    if email.strip()
+}
 
 # Engine / Session (síncrono)
 engine = create_engine(DATABASE_URL, echo=True)  # set echo=False em produção
@@ -79,6 +84,11 @@ class User(Base):
     tokens = relationship(
         "SessionToken", back_populates="user", cascade="all, delete-orphan"
     )
+
+    @property
+    def is_admin(self) -> bool:
+        email = (self.email or "").strip().lower()
+        return bool(email) and email in ADMIN_EMAILS
 
 
 class SessionToken(Base):
@@ -175,36 +185,36 @@ class Event(Base):
 
 # === Schemas Pydantic ===
 class EventCreate(BaseModel):
-    title: str
+    title: str = Field(..., max_length=255)
     description: Optional[str] = None
     date: Optional[datetime] = None
     establishment_id: Optional[int] = None
-    establishment_name: Optional[str] = None
-    image_url: Optional[HttpUrl] = None
-    city: Optional[str] = None
-    neighborhood: Optional[str] = None
-    street: Optional[str] = None
-    number: Optional[str] = None
+    establishment_name: Optional[str] = Field(default=None, max_length=255)
+    image_url: Optional[HttpUrl] = Field(default=None, max_length=255)
+    city: Optional[str] = Field(default=None, max_length=100)
+    neighborhood: Optional[str] = Field(default=None, max_length=100)
+    street: Optional[str] = Field(default=None, max_length=255)
+    number: Optional[str] = Field(default=None, max_length=20)
     price: Optional[float] = None
-    url: Optional[HttpUrl] = None
+    url: Optional[HttpUrl] = Field(default=None, max_length=255)
     is_free: Optional[bool] = False
     capacity: Optional[int] = None
     genre_ids: Optional[List[int]] = None
     artist_ids: Optional[List[int]] = None
 
 class EventUpdate(BaseModel):
-    title: Optional[str] = None
+    title: Optional[str] = Field(default=None, max_length=255)
     description: Optional[str] = None
     date: Optional[datetime] = None
     establishment_id: Optional[int] = None
-    establishment_name: Optional[str] = None
-    image_url: Optional[HttpUrl] = None
-    city: Optional[str] = None
-    neighborhood: Optional[str] = None
-    street: Optional[str] = None
-    number: Optional[str] = None
+    establishment_name: Optional[str] = Field(default=None, max_length=255)
+    image_url: Optional[HttpUrl] = Field(default=None, max_length=255)
+    city: Optional[str] = Field(default=None, max_length=100)
+    neighborhood: Optional[str] = Field(default=None, max_length=100)
+    street: Optional[str] = Field(default=None, max_length=255)
+    number: Optional[str] = Field(default=None, max_length=20)
     price: Optional[float] = None
-    url: Optional[HttpUrl] = None
+    url: Optional[HttpUrl] = Field(default=None, max_length=255)
     is_free: Optional[bool] = None
     capacity: Optional[int] = None
     genre_ids: Optional[List[int]] = None
@@ -238,7 +248,7 @@ class EventRead(ORMModel):
 
 class UserBase(BaseModel):
     email: EmailStr
-    name: Optional[str] = None
+    name: Optional[str] = Field(default=None, max_length=255)
 
 
 class UserCreate(UserBase):
@@ -252,6 +262,7 @@ class UserLogin(BaseModel):
 
 class UserRead(ORMModel, UserBase):
     id: int
+    is_admin: bool = False
 
 class AuthResponse(BaseModel):
     token: str
@@ -275,6 +286,10 @@ security = HTTPBearer(auto_error=False)
 
 def normalize_email(email: str) -> str:
     return (email or "").strip().lower()
+
+
+def is_admin_user(user: Optional["User"]) -> bool:
+    return bool(user) and bool(getattr(user, "is_admin", False))
 
 
 def hash_password(password: str) -> str:
@@ -308,14 +323,6 @@ def get_current_user(
     session_token.last_used_at = datetime.utcnow()
     db.commit()
     return session_token.user
-
-# Dependency: session DB
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 # Cria tabelas no startup (útil para dev)
 @app.on_event("startup")
@@ -384,13 +391,14 @@ def create_event(
     data = payload.dict(exclude_unset=True)
     genre_ids = data.pop("genre_ids", None)
     artist_ids = data.pop("artist_ids", None)
+    is_admin = is_admin_user(current_user)
 
     establishment_id = data.get("establishment_id")
     if establishment_id:
         est = db.query(Establishment).filter(Establishment.id == establishment_id).first()
         if not est:
             raise HTTPException(status_code=404, detail="Estabelecimento n��o encontrado")
-        if est.owner_id and est.owner_id != current_user.id:
+        if est.owner_id and est.owner_id != current_user.id and not is_admin:
             raise HTTPException(status_code=403, detail="Estabelecimento pertence a outro usu��rio")
         if est.owner_id is None:
             est.owner_id = current_user.id
@@ -448,7 +456,8 @@ def update_event(
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Evento nǜo encontrado")
-    if event.user_id and event.user_id != current_user.id:
+    is_admin = is_admin_user(current_user)
+    if event.user_id and event.user_id != current_user.id and not is_admin:
         raise HTTPException(status_code=403, detail="VocǦ nǜo pode editar este evento")
     if event.user_id is None:
         event.user_id = current_user.id
@@ -461,7 +470,7 @@ def update_event(
         est = db.query(Establishment).filter(Establishment.id == establishment_id).first()
         if not est:
             raise HTTPException(status_code=404, detail="Estabelecimento nǜo encontrado")
-        if est.owner_id and est.owner_id != current_user.id:
+        if est.owner_id and est.owner_id != current_user.id and not is_admin:
             raise HTTPException(status_code=403, detail="Estabelecimento pertence a outro usuǭrio")
         if est.owner_id is None:
             est.owner_id = current_user.id
@@ -487,7 +496,8 @@ def delete_event(
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Evento nǜo encontrado")
-    if event.user_id and event.user_id != current_user.id:
+    is_admin = is_admin_user(current_user)
+    if event.user_id and event.user_id != current_user.id and not is_admin:
         raise HTTPException(status_code=403, detail="VocǦ nǜo pode excluir este evento")
     db.delete(event)
     db.commit()
@@ -714,26 +724,26 @@ def dev_seed(db: Session = Depends(get_db)):
 # Schemas: Establishment
 # =====================
 class EstablishmentBase(BaseModel):
-    name: str
+    name: str = Field(..., max_length=255)
     description: Optional[str] = None
-    image_url: Optional[HttpUrl] = None
-    city: Optional[str] = None
-    neighborhood: Optional[str] = None
-    street: Optional[str] = None
-    number: Optional[str] = None
+    image_url: Optional[HttpUrl] = Field(default=None, max_length=255)
+    city: Optional[str] = Field(default=None, max_length=100)
+    neighborhood: Optional[str] = Field(default=None, max_length=100)
+    street: Optional[str] = Field(default=None, max_length=255)
+    number: Optional[str] = Field(default=None, max_length=20)
     capacity: Optional[int] = None
 
 class EstablishmentCreate(EstablishmentBase):
     pass
 
 class EstablishmentUpdate(BaseModel):
-    name: Optional[str] = None
+    name: Optional[str] = Field(default=None, max_length=255)
     description: Optional[str] = None
-    image_url: Optional[HttpUrl] = None
-    city: Optional[str] = None
-    neighborhood: Optional[str] = None
-    street: Optional[str] = None
-    number: Optional[str] = None
+    image_url: Optional[HttpUrl] = Field(default=None, max_length=255)
+    city: Optional[str] = Field(default=None, max_length=100)
+    neighborhood: Optional[str] = Field(default=None, max_length=100)
+    street: Optional[str] = Field(default=None, max_length=255)
+    number: Optional[str] = Field(default=None, max_length=20)
     capacity: Optional[int] = None
 
 class EstablishmentRead(ORMModel, EstablishmentBase):
@@ -743,24 +753,24 @@ class EstablishmentRead(ORMModel, EstablishmentBase):
     updated_at: datetime
 
 class GenreCreate(BaseModel):
-    name: str
+    name: str = Field(..., max_length=100)
 
 class GenreUpdate(BaseModel):
-    name: Optional[str] = None
+    name: Optional[str] = Field(default=None, max_length=100)
 
 class GenreRead(ORMModel):
     id: int
     name: str
 
 class ArtistCreate(BaseModel):
-    name: str
+    name: str = Field(..., max_length=255)
     description: Optional[str] = None
-    url: Optional[HttpUrl] = None
+    url: Optional[HttpUrl] = Field(default=None, max_length=255)
 
 class ArtistUpdate(BaseModel):
-    name: Optional[str] = None
+    name: Optional[str] = Field(default=None, max_length=255)
     description: Optional[str] = None
-    url: Optional[HttpUrl] = None
+    url: Optional[HttpUrl] = Field(default=None, max_length=255)
 
 class ArtistRead(ORMModel):
     id: int
@@ -826,7 +836,8 @@ def update_establishment(
     est = db.query(Establishment).filter(Establishment.id == establishment_id).first()
     if not est:
         raise HTTPException(status_code=404, detail="Estabelecimento não encontrado")
-    if est.owner_id and est.owner_id != current_user.id:
+    is_admin = is_admin_user(current_user)
+    if est.owner_id and est.owner_id != current_user.id and not is_admin:
         raise HTTPException(status_code=403, detail="Você não pode editar este estabelecimento")
     if est.owner_id is None:
         est.owner_id = current_user.id
@@ -846,7 +857,8 @@ def delete_establishment(
     est = db.query(Establishment).filter(Establishment.id == establishment_id).first()
     if not est:
         raise HTTPException(status_code=404, detail="Estabelecimento não encontrado")
-    if est.owner_id and est.owner_id != current_user.id:
+    is_admin = is_admin_user(current_user)
+    if est.owner_id and est.owner_id != current_user.id and not is_admin:
         raise HTTPException(status_code=403, detail="Você não pode excluir este estabelecimento")
     db.delete(est)
     db.commit()
