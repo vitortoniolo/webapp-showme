@@ -22,6 +22,7 @@
   </script>
 
   <!-- Alpine.js via CDN -->
+  <script src="js/auth.js"></script>
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-brand-muted text-slate-900" x-data="searchApp()" x-init="carregarEventos()">
@@ -29,23 +30,33 @@
     <!-- Header -->
     <header class="bg-white/90 backdrop-blur border-b border-lime-100 sticky top-0 z-20">
       <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-        <div class="flex items-center space-x-3">
+        <a href="index.html" class="flex items-center space-x-3">
           <div class="w-12 h-12 rounded-full border-2 border-brand border-dashed"></div>
           <span class="text-2xl font-semibold text-slate-900">ShowMe</span>
-        </div>
+        </a>
         <nav class="hidden md:flex items-center space-x-6 text-slate-700">
           <a href="index.html" class="hover:text-slate-900">Home</a>
           <a href="search.html" class="hover:text-slate-900">Eventos</a>
-          <a href="#" class="hover:text-slate-900">Sobre</a>
-          <a href="#" class="hover:text-slate-900">Contato</a>
+          <a href="create-event.html" class="hover:text-slate-900">Criar evento</a>
+          <a href="create-establishment.html" class="hover:text-slate-900">Criar estabelecimento</a>
         </nav>
-        <div class="flex items-center space-x-3">
-          <button class="hidden sm:inline-flex items-center px-4 py-2 rounded-full border border-brand-dark text-brand-dark font-semibold hover:bg-brand/20 transition">
-            Entrar
-          </button>
-          <a href="create-event.html" class="inline-flex items-center px-4 py-2 rounded-full bg-brand-dark text-white font-semibold shadow hover:bg-brand-dark/90 transition">
-            Cadastrar evento
-          </a>
+        <div class="flex items-center space-x-3" x-data="authMenu()" x-init="init()">
+          <template x-if="user">
+            <div class="flex items-center space-x-3">
+              <a href="admin-events.html" class="inline-flex items-center px-4 py-2 rounded-full bg-brand-dark text-white font-semibold shadow hover:bg-brand-dark/90 transition">
+                Meu painel
+              </a>
+              <button type="button" class="inline-flex items-center px-4 py-2 rounded-full border border-slate-200 text-slate-700 font-semibold hover:bg-white transition" @click="logout" :disabled="loading">
+                <span x-show="!loading">Sair</span>
+                <span x-show="loading">Saindo...</span>
+              </button>
+            </div>
+          </template>
+          <template x-if="!user">
+            <a href="account.html" class="inline-flex items-center px-4 py-2 rounded-full border border-brand-dark text-brand-dark font-semibold hover:bg-brand/20 transition">
+              Login
+            </a>
+          </template>
         </div>
       </div>
     </header>
@@ -108,7 +119,14 @@
               <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                 <template x-for="evento in proximosEventos()" :key="evento.id">
                   <article class="bg-white rounded-3xl border border-white shadow-sm p-5 flex flex-col space-y-4">
-                    <div class="h-36 rounded-2xl border-2 border-dashed border-brand/60 bg-brand-muted/70"></div>
+                    <div class="h-36 rounded-2xl border-2 border-dashed border-brand/60 bg-brand-muted/70 overflow-hidden">
+                      <template x-if="evento.image_url">
+                        <img :src="evento.image_url" alt="" class="w-full h-full object-cover">
+                      </template>
+                      <div class="w-full h-full flex items-center justify-center text-slate-400 text-sm" x-show="!evento.image_url">
+                        Sem imagem
+                      </div>
+                    </div>
                     <div>
                       <span class="text-sm font-semibold text-brand-dark" x-text="formatDate(evento.date)"></span>
                       <h3 class="text-xl font-bold text-slate-900" x-text="evento.title"></h3>
@@ -137,7 +155,14 @@
               <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                 <template x-for="evento in eventosChegandoLogo()" :key="evento.id + '-soon'">
                   <article class="bg-white rounded-3xl border border-white shadow-sm p-5 flex flex-col space-y-4">
-                    <div class="h-36 rounded-2xl border-2 border-dashed border-slate-200 bg-white/50"></div>
+                    <div class="h-36 rounded-2xl border-2 border-dashed border-slate-200 bg-white/50 overflow-hidden">
+                      <template x-if="evento.image_url">
+                        <img :src="evento.image_url" alt="" class="w-full h-full object-cover">
+                      </template>
+                      <div class="w-full h-full flex items-center justify-center text-slate-400 text-sm" x-show="!evento.image_url">
+                        Sem imagem
+                      </div>
+                    </div>
                     <div>
                       <span class="text-sm font-semibold text-slate-500" x-text="formatDate(evento.date)"></span>
                       <h3 class="text-xl font-bold text-slate-900" x-text="evento.title"></h3>
@@ -164,33 +189,25 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-slate-900 text-white py-10">
-      <div class="max-w-6xl mx-auto px-4 grid gap-8 md:grid-cols-4">
+    <footer class="bg-slate-900 text-white mt-auto">
+      <div class="max-w-6xl mx-auto px-4 py-10 grid gap-8 md:grid-cols-3">
         <div class="space-y-3">
           <div class="w-12 h-12 rounded-full border-2 border-white/60 border-dashed"></div>
-          <p class="text-sm text-white/70">ShowMe conecta você aos melhores eventos da sua região.</p>
+          <p class="text-sm text-white/70">ShowMe conecta você aos melhores eventos independentes da sua região.</p>
         </div>
         <div>
-          <h4 class="font-semibold mb-3">Mapa do site</h4>
+          <h4 class="font-semibold mb-3">Navegação</h4>
           <ul class="space-y-2 text-sm text-white/70">
             <li><a href="index.html" class="hover:text-white">Home</a></li>
-            <li><a href="index.html#eventos" class="hover:text-white">Eventos</a></li>
-            <li><a href="#" class="hover:text-white">Sobre</a></li>
-            <li><a href="#" class="hover:text-white">Contato</a></li>
-          </ul>
-        </div>
-        <div>
-          <h4 class="font-semibold mb-3">Ajuda</h4>
-          <ul class="space-y-2 text-sm text-white/70">
-            <li><a href="#" class="hover:text-white">Central de suporte</a></li>
-            <li><a href="#" class="hover:text-white">Perguntas frequentes</a></li>
-            <li><a href="#" class="hover:text-white">Política de privacidade</a></li>
+            <li><a href="search.html" class="hover:text-white">Eventos</a></li>
+            <li><a href="create-event.html" class="hover:text-white">Criar evento</a></li>
+            <li><a href="create-establishment.html" class="hover:text-white">Criar estabelecimento</a></li>
           </ul>
         </div>
         <div>
           <h4 class="font-semibold mb-3">Contato</h4>
-          <p class="text-sm text-white/70">contato@showme.com</p>
-          <p class="text-sm text-white/70">(11) 4000-0000</p>
+          <a href="mailto:contato@showme.com" class="block text-sm text-white/70 hover:text-white">contato@showme.com</a>
+          <a href="tel:+551140000000" class="block text-sm text-white/70 hover:text-white">(11) 4000-0000</a>
           <div class="mt-4 flex space-x-3">
             <div class="w-9 h-9 rounded-full border border-white/40 border-dashed"></div>
             <div class="w-9 h-9 rounded-full border border-white/40 border-dashed"></div>
@@ -198,7 +215,7 @@
           </div>
         </div>
       </div>
-      <div class="mt-10 border-t border-white/10 pt-4 text-center text-xs text-white/50">
+      <div class="border-t border-white/10 py-4 text-center text-xs text-white/60">
         © <span x-text="new Date().getFullYear()"></span> ShowMe. Todos os direitos reservados.
       </div>
     </footer>
