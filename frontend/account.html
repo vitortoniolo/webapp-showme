@@ -1,0 +1,164 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShowMe - Minha conta</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: '#c1ff72',
+            'brand-dark': '#7abf2f',
+            'brand-muted': '#f3ffe1'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    [x-cloak] { display: none !important; }
+  </style>
+  <script src="js/auth.js"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-brand-muted text-slate-900" x-data="accountApp()" x-init="init()">
+  <div class="min-h-screen flex flex-col">
+    <header class="bg-white/90 backdrop-blur border-b border-lime-100 sticky top-0 z-20">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <a href="index.html" class="flex items-center space-x-3">
+          <div class="w-12 h-12 rounded-full border-2 border-brand border-dashed"></div>
+          <span class="text-2xl font-semibold text-slate-900">ShowMe</span>
+        </a>
+        <nav class="hidden md:flex items-center space-x-6 text-slate-700">
+          <a href="index.html" class="hover:text-slate-900">Home</a>
+          <a href="search.html" class="hover:text-slate-900">Eventos</a>
+          <a href="create-event.html" class="hover:text-slate-900">Criar evento</a>
+          <a href="create-establishment.html" class="hover:text-slate-900">Criar estabelecimento</a>
+        </nav>
+        <div class="flex items-center space-x-3" x-data="authMenu()" x-init="init()">
+          <template x-if="user">
+            <div class="flex items-center space-x-3">
+              <a :href="dashboardUrl()" class="inline-flex items-center px-4 py-2 rounded-full bg-brand-dark text-white font-semibold shadow hover:bg-brand-dark/90 transition">
+                <span x-text="dashboardLabel()"></span>
+              </a>
+              <button type="button" class="inline-flex items-center px-4 py-2 rounded-full border border-slate-200 text-slate-700 font-semibold hover:bg-white transition" @click="logout" :disabled="loading">
+                <span x-show="!loading">Sair</span>
+                <span x-show="loading">Saindo...</span>
+              </button>
+            </div>
+          </template>
+          <template x-if="!user">
+            <a href="account.html" class="inline-flex items-center px-4 py-2 rounded-full border border-brand-dark text-brand-dark font-semibold hover:bg-brand/20 transition">
+              Login
+            </a>
+          </template>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1">
+      <section class="max-w-4xl mx-auto px-4 py-12 space-y-8">
+        <div class="space-y-2 text-center">
+          <p class="text-sm uppercase tracking-wide text-slate-500 font-semibold">Acesso ao painel</p>
+          <h1 class="text-3xl sm:text-4xl font-bold text-slate-900">Entrar ou criar conta</h1>
+          <p class="text-slate-600">Use o mesmo login para cadastrar eventos e estabelecimentos e gerenciar tudo no painel.</p>
+        </div>
+
+        <div class="grid gap-6 lg:grid-cols-2">
+          <article class="bg-white rounded-3xl border border-white shadow-sm p-6 space-y-4">
+            <div>
+              <h2 class="text-xl font-semibold text-slate-900">Já tenho conta</h2>
+              <p class="text-sm text-slate-500">Faça login para acessar o painel.</p>
+            </div>
+            <form class="space-y-4" @submit.prevent="submitLogin">
+              <label class="flex flex-col gap-1 text-sm">
+                <span class="font-medium text-slate-800">E-mail</span>
+                <input type="email" x-model="loginForm.email" required class="rounded-2xl border border-slate-200 px-4 py-2.5">
+              </label>
+              <label class="flex flex-col gap-1 text-sm">
+                <span class="font-medium text-slate-800">Senha</span>
+                <input type="password" x-model="loginForm.password" required class="rounded-2xl border border-slate-200 px-4 py-2.5">
+              </label>
+              <button type="submit" class="w-full rounded-2xl bg-brand-dark text-white font-semibold py-2.5" :disabled="loading">
+                <span x-show="!loading">Entrar</span>
+                <span x-show="loading">Enviando...</span>
+              </button>
+            </form>
+          </article>
+
+          <article class="bg-white rounded-3xl border border-white shadow-sm p-6 space-y-4">
+            <div>
+              <h2 class="text-xl font-semibold text-slate-900">Quero me cadastrar</h2>
+              <p class="text-sm text-slate-500">Leva menos de um minuto.</p>
+            </div>
+            <form class="space-y-4" @submit.prevent="submitSignup">
+              <label class="flex flex-col gap-1 text-sm">
+                <span class="font-medium text-slate-800">Nome</span>
+                <input type="text" x-model="signupForm.name" class="rounded-2xl border border-slate-200 px-4 py-2.5" placeholder="Opcional">
+              </label>
+              <label class="flex flex-col gap-1 text-sm">
+                <span class="font-medium text-slate-800">E-mail</span>
+                <input type="email" x-model="signupForm.email" required class="rounded-2xl border border-slate-200 px-4 py-2.5">
+              </label>
+              <label class="flex flex-col gap-1 text-sm">
+                <span class="font-medium text-slate-800">Senha</span>
+                <input type="password" x-model="signupForm.password" required minlength="4" class="rounded-2xl border border-slate-200 px-4 py-2.5">
+              </label>
+              <button type="submit" class="w-full rounded-2xl border border-brand-dark text-brand-dark font-semibold py-2.5" :disabled="loading">
+                <span x-show="!loading">Criar conta</span>
+                <span x-show="loading">Enviando...</span>
+              </button>
+            </form>
+          </article>
+        </div>
+
+        <p class="text-center text-sm text-red-600" x-show="error" x-cloak x-text="error"></p>
+        <p class="text-center text-sm text-emerald-600" x-show="success" x-cloak x-text="success"></p>
+
+        <div class="bg-white rounded-3xl border border-white shadow-sm p-6" x-show="user" x-cloak>
+          <p class="text-sm text-slate-500">Sessão ativa</p>
+          <p class="text-lg font-semibold" x-text="user?.name || user?.email"></p>
+          <div class="mt-4 flex gap-3">
+            <a :href="dashboardUrl()" class="px-4 py-2 rounded-2xl bg-brand-dark text-white font-semibold">Ir para meu painel</a>
+            <button type="button" class="px-4 py-2 rounded-2xl border border-slate-200" @click="logout">Sair</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bg-slate-900 text-white mt-auto">
+      <div class="max-w-6xl mx-auto px-4 py-10 grid gap-8 md:grid-cols-3">
+        <div class="space-y-3">
+          <div class="w-12 h-12 rounded-full border-2 border-white/60 border-dashed"></div>
+          <p class="text-sm text-white/70">ShowMe conecta voc? aos melhores eventos independentes da sua regi?o.</p>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-3">Navega??o</h4>
+          <ul class="space-y-2 text-sm text-white/70">
+            <li><a href="index.html" class="hover:text-white">Home</a></li>
+            <li><a href="search.html" class="hover:text-white">Eventos</a></li>
+            <li><a href="create-event.html" class="hover:text-white">Criar evento</a></li>
+            <li><a href="create-establishment.html" class="hover:text-white">Criar estabelecimento</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-3">Contato</h4>
+          <a href="mailto:contato@showme.com" class="block text-sm text-white/70 hover:text-white">contato@showme.com</a>
+          <a href="tel:+551140000000" class="block text-sm text-white/70 hover:text-white">(11) 4000-0000</a>
+          <div class="mt-4 flex space-x-3">
+            <div class="w-9 h-9 rounded-full border border-white/40 border-dashed"></div>
+            <div class="w-9 h-9 rounded-full border border-white/40 border-dashed"></div>
+            <div class="w-9 h-9 rounded-full border border-white/40 border-dashed"></div>
+          </div>
+        </div>
+      </div>
+      <div class="border-t border-white/10 py-4 text-center text-xs text-white/60">
+        ? <span x-text="new Date().getFullYear()"></span> ShowMe. Todos os direitos reservados.
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

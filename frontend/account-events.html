@@ -1,0 +1,561 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShowMe - Painel de eventos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: '#c1ff72',
+            'brand-dark': '#7abf2f',
+            'brand-muted': '#f3ffe1'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    [x-cloak] { display: none !important; }
+    .line-limit-3 {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  </style>
+  <script src="js/auth.js"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-brand-muted text-slate-900" x-data="adminEventsApp()" x-init="init()">
+  <div class="min-h-screen flex flex-col">
+    <header class="bg-white/90 backdrop-blur border-b border-lime-100 sticky top-0 z-20">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <a href="index.html" class="flex items-center space-x-3">
+          <div class="w-12 h-12 rounded-full border-2 border-brand border-dashed"></div>
+          <span class="text-2xl font-semibold text-slate-900">ShowMe</span>
+        </a>
+        <nav class="hidden md:flex items-center space-x-6 text-slate-700">
+          <a href="index.html" class="hover:text-slate-900">Home</a>
+          <a href="search.html" class="hover:text-slate-900">Eventos</a>
+          <a href="create-event.html" class="hover:text-slate-900">Criar evento</a>
+          <a href="create-establishment.html" class="hover:text-slate-900">Criar estabelecimento</a>
+        </nav>
+        <div class="flex items-center space-x-3" x-data="authMenu()" x-init="init()">
+          <template x-if="user">
+            <div class="flex items-center space-x-3">
+              <a :href="dashboardUrl()" class="inline-flex items-center px-4 py-2 rounded-full bg-brand-dark text-white font-semibold shadow hover:bg-brand-dark/90 transition">
+                <span x-text="dashboardLabel()"></span>
+              </a>
+              <button type="button" class="inline-flex items-center px-4 py-2 rounded-full border border-slate-200 text-slate-700 font-semibold hover:bg-white transition" @click="logout" :disabled="loading">
+                <span x-show="!loading">Sair</span>
+                <span x-show="loading">Saindo...</span>
+              </button>
+            </div>
+          </template>
+          <template x-if="!user">
+            <a href="account.html" class="inline-flex items-center px-4 py-2 rounded-full border border-brand-dark text-brand-dark font-semibold hover:bg-brand/20 transition">
+              Login
+            </a>
+          </template>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1">
+      <section class="max-w-6xl mx-auto px-4 py-10">
+        <div class="flex flex-col gap-3">
+          <p class="text-sm uppercase tracking-wider text-slate-500 font-semibold">Gestão de conteúdo</p>
+          <div class="flex flex-wrap items-center gap-4 justify-between">
+            <h1 class="text-3xl sm:text-4xl font-bold text-slate-900">Eventos cadastrados</h1>
+            <button type="button" class="inline-flex items-center px-4 py-2 rounded-full bg-brand-dark text-white font-semibold shadow hover:bg-brand-dark/90" @click="fetchEvents">
+              Atualizar lista
+            </button>
+          </div>
+          <p class="text-slate-600 max-w-3xl">Busque, edite (incluindo a imagem) ou remova qualquer evento usando os filtros avançados ao lado. Todas as ações usam a API local.</p>
+          <p class="text-sm text-red-600" x-show="authError" x-text="authError" x-cloak></p>
+        </div>
+
+        <div class="mt-8 grid gap-8 lg:grid-cols-[280px_1fr]">
+          <aside class="bg-white rounded-3xl border border-white shadow-sm p-6 space-y-5">
+            <div>
+              <h2 class="text-xl font-semibold text-slate-900">Pesquisar eventos</h2>
+              <p class="text-sm text-slate-500">Filtros iguais ao search.</p>
+            </div>
+            <form class="space-y-5" @submit.prevent>
+              <div>
+                <label class="text-sm font-medium text-slate-700">Palavra-chave</label>
+                <input type="search" x-model="filters.q" placeholder="Nome, artista" class="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
+              </div>
+              <div>
+                <label class="text-sm font-medium text-slate-700">Bairro / endereço</label>
+                <input type="text" x-model="filters.area" placeholder="Cidade Baixa" class="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-sm font-medium text-slate-700">Data inicial</label>
+                  <input type="date" x-model="filters.startDate" class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-slate-700">Data final</label>
+                  <input type="date" x-model="filters.endDate" class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-sm font-medium text-slate-700">Preço mínimo</label>
+                  <input type="number" min="0" step="1" x-model.number="filters.minPrice" placeholder="R$" class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-slate-700">Preço máximo</label>
+                  <input type="number" min="0" step="1" x-model.number="filters.maxPrice" placeholder="R$" class="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
+                </div>
+              </div>
+              <div class="flex items-center space-x-3">
+                <input id="onlyFree" type="checkbox" x-model="filters.onlyFree" class="rounded border-slate-300 text-brand-dark focus:ring-brand-dark/40">
+                <label for="onlyFree" class="text-sm text-slate-700">Mostrar apenas gratuitos</label>
+              </div>
+              <button type="button" @click="resetFilters" class="w-full rounded-2xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-700 hover:bg-brand-muted">Limpar filtros</button>
+            </form>
+          </aside>
+
+          <div class="space-y-6">
+            <div class="bg-white/70 rounded-3xl border border-white shadow-sm p-5 flex flex-wrap gap-3 items-center justify-between">
+              <div>
+                <p class="text-sm text-slate-500">Resultados filtrados</p>
+                <p class="text-2xl font-semibold text-slate-900" x-text="`${filteredEventos().length} eventos encontrados`"></p>
+              </div>
+              <div class="text-sm text-slate-600" x-show="loading" x-cloak>Sincronizando com a API...</div>
+              <div class="text-sm" x-show="alert.message" :class="alert.type === 'error' ? 'text-red-600' : 'text-emerald-600'" x-text="alert.message"></div>
+              <div class="text-sm text-red-600" x-show="authError" x-text="authError" x-cloak></div>
+            </div>
+
+            <template x-if="!filteredEventos().length && !loading">
+              <div class="rounded-3xl border border-dashed border-slate-200 bg-white/70 p-10 text-center text-slate-600">
+                Nenhum evento corresponde aos filtros atuais.
+              </div>
+            </template>
+
+            <div class="space-y-6">
+              <template x-for="evento in filteredEventos()" :key="evento.id">
+                <article class="bg-white rounded-3xl border border-white shadow-sm p-6 space-y-4">
+                  <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div class="space-y-1">
+                      <p class="text-sm text-slate-500 font-semibold" x-text="`ID #${evento.id} • ${formatDate(evento.date)}`"></p>
+                      <h3 class="text-2xl font-bold text-slate-900" x-text="evento.title"></h3>
+                      <p class="text-sm text-slate-600" x-text="formatLocation(evento)"></p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                      <button type="button" class="px-4 py-2 rounded-full border border-slate-200 text-sm font-semibold hover:bg-brand-muted" @click="openEdit(evento)">Editar</button>
+                      <button type="button" class="px-4 py-2 rounded-full border border-red-200 text-sm font-semibold text-red-600 hover:bg-red-50"
+                        @click="deleteEvent(evento)" :disabled="deletingId === evento.id">
+                        <span x-show="deletingId !== evento.id">Excluir</span>
+                        <span x-show="deletingId === evento.id">Excluindo...</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="flex flex-col gap-4 md:flex-row">
+                    <div class="w-full md:w-48 h-40 rounded-2xl border-2 border-dashed border-brand/50 bg-brand-muted/60 overflow-hidden">
+                      <template x-if="evento.image_url">
+                        <img :src="evento.image_url" alt="" class="w-full h-full object-cover">
+                      </template>
+                      <div class="w-full h-full flex items-center justify-center text-slate-400 text-sm" x-show="!evento.image_url">Sem imagem</div>
+                    </div>
+                    <p class="flex-1 text-sm text-slate-600 line-limit-3" x-text="evento.description || 'Sem descrição'" ></p>
+                  </div>
+
+                  <div class="flex flex-wrap gap-4 text-sm text-slate-600">
+                    <span class="px-3 py-1 rounded-full bg-brand-muted/60 border border-brand/40 text-slate-800" x-text="formatPrice(evento)"></span>
+                    <span class="px-3 py-1 rounded-full bg-slate-100 border border-slate-200" x-text="evento.is_free ? 'Gratuito' : 'Pago'"></span>
+                    <span class="px-3 py-1 rounded-full bg-slate-100 border border-slate-200" x-text="evento.capacity ? evento.capacity + ' pessoas' : 'Capacidade livre'"></span>
+                  </div>
+
+                  <div x-show="editingId === evento.id" x-cloak x-transition class="border-t border-slate-100 pt-5">
+                    <form class="space-y-5" @submit.prevent="saveEvent">
+                      <div class="grid gap-4 md:grid-cols-2">
+                        <label class="flex flex-col gap-1">
+                          <span class="text-sm font-medium text-slate-700">Título *</span>
+                          <input type="text" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="editForm.title" required>
+                        </label>
+                        <label class="flex flex-col gap-1">
+                          <span class="text-sm font-medium text-slate-700">Data e horário</span>
+                          <input type="datetime-local" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="editForm.date">
+                        </label>
+                        <label class="flex flex-col gap-1">
+                          <span class="text-sm font-medium text-slate-700">Preço</span>
+                          <input type="number" min="0" step="0.01" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="editForm.price">
+                        </label>
+                        <label class="flex flex-col gap-1">
+                          <span class="text-sm font-medium text-slate-700">URL oficial</span>
+                          <input type="url" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="editForm.url">
+                        </label>
+                      </div>
+
+                      <div class="grid gap-4 md:grid-cols-2">
+                        <label class="flex flex-col gap-1">
+                          <span class="text-sm font-medium text-slate-700">Imagem (URL)</span>
+                          <input type="url" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="editForm.image_url">
+                        </label>
+                        <label class="flex flex-col gap-1">
+                          <span class="text-sm font-medium text-slate-700">Estabelecimento ID</span>
+                          <input type="number" min="0" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="editForm.establishment_id">
+                        </label>
+                      </div>
+
+                      <label class="flex flex-col gap-1">
+                        <span class="text-sm font-medium text-slate-700">Nome do local (visível)</span>
+                        <input type="text" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="editForm.establishment_name">
+                      </label>
+
+                      <div class="grid gap-4 md:grid-cols-2">
+                        <label class="flex flex-col gap-1">
+                          <span class="text-sm font-medium text-slate-700">Cidade</span>
+                          <input type="text" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="editForm.city">
+                        </label>
+                        <label class="flex flex-col gap-1">
+                          <span class="text-sm font-medium text-slate-700">Bairro</span>
+                          <input type="text" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="editForm.neighborhood">
+                        </label>
+                        <label class="flex flex-col gap-1">
+                          <span class="text-sm font-medium text-slate-700">Rua</span>
+                          <input type="text" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="editForm.street">
+                        </label>
+                        <label class="flex flex-col gap-1">
+                          <span class="text-sm font-medium text-slate-700">Número</span>
+                          <input type="text" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="editForm.number">
+                        </label>
+                      </div>
+
+                      <div class="grid gap-4 md:grid-cols-3">
+                        <label class="flex flex-col gap-1">
+                          <span class="text-sm font-medium text-slate-700">Capacidade</span>
+                          <input type="number" min="0" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="editForm.capacity">
+                        </label>
+                        <label class="flex flex-col gap-1">
+                          <span class="text-sm font-medium text-slate-700">Evento gratuito?</span>
+                          <select class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="editForm.is_free">
+                            <option :value="false">Pago</option>
+                            <option :value="true">Gratuito</option>
+                          </select>
+                        </label>
+                        <label class="flex flex-col gap-1">
+                          <span class="text-sm font-medium text-slate-700">Link do ingresso</span>
+                          <input type="url" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="editForm.url">
+                        </label>
+                      </div>
+
+                      <label class="flex flex-col gap-1">
+                        <span class="text-sm font-medium text-slate-700">Descrição</span>
+                        <textarea rows="4" class="rounded-2xl border border-slate-200 px-4 py-2.5" x-model="editForm.description"></textarea>
+                      </label>
+
+                      <div class="flex flex-wrap gap-3 justify-end">
+                        <button type="button" class="px-4 py-2 rounded-2xl border border-slate-200 text-sm font-semibold text-slate-600" @click="cancelEdit">Cancelar</button>
+                        <button type="submit" class="px-6 py-2 rounded-2xl bg-brand-dark text-white font-semibold shadow" :disabled="saving">
+                          <span x-show="!saving">Salvar alterações</span>
+                          <span x-show="saving">Salvando...</span>
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </article>
+              </template>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bg-slate-900 text-white mt-auto">
+      <div class="max-w-6xl mx-auto px-4 py-10 grid gap-8 md:grid-cols-3">
+        <div class="space-y-3">
+          <div class="w-12 h-12 rounded-full border-2 border-white/60 border-dashed"></div>
+          <p class="text-sm text-white/70">ShowMe conecta voc? aos melhores eventos independentes da sua regi?o.</p>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-3">Navega??o</h4>
+          <ul class="space-y-2 text-sm text-white/70">
+            <li><a href="index.html" class="hover:text-white">Home</a></li>
+            <li><a href="search.html" class="hover:text-white">Eventos</a></li>
+            <li><a href="create-event.html" class="hover:text-white">Criar evento</a></li>
+            <li><a href="create-establishment.html" class="hover:text-white">Criar estabelecimento</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-3">Contato</h4>
+          <a href="mailto:contato@showme.com" class="block text-sm text-white/70 hover:text-white">contato@showme.com</a>
+          <a href="tel:+551140000000" class="block text-sm text-white/70 hover:text-white">(11) 4000-0000</a>
+          <div class="mt-4 flex space-x-3">
+            <div class="w-9 h-9 rounded-full border border-white/40 border-dashed"></div>
+            <div class="w-9 h-9 rounded-full border border-white/40 border-dashed"></div>
+            <div class="w-9 h-9 rounded-full border border-white/40 border-dashed"></div>
+          </div>
+        </div>
+      </div>
+      <div class="border-t border-white/10 py-4 text-center text-xs text-white/60">
+        ? <span x-text="new Date().getFullYear()"></span> ShowMe. Todos os direitos reservados.
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    function adminEventsApp() {
+      return {
+        apiBase: 'http://localhost:8000',
+        eventos: [],
+        loading: true,
+        saving: false,
+        deletingId: null,
+        editingId: null,
+        editForm: {},
+        alert: { type: '', message: '' },
+        user: Auth.getUser(),
+        authError: 'Faça login para visualizar os seus eventos.',
+        filters: {
+          q: '',
+          area: '',
+          startDate: '',
+          endDate: '',
+          minPrice: '',
+          maxPrice: '',
+          onlyFree: false,
+        },
+        init() {
+          this.setupAuth();
+        },
+        setupAuth() {
+          Auth.onChange((state) => {
+            const prevUser = this.user;
+            this.user = state?.user || null;
+            if (this.user) {
+              this.authError = '';
+              if (!prevUser || prevUser.id !== this.user.id) {
+                this.fetchEvents();
+              }
+            } else {
+              this.eventos = [];
+              this.authError = 'Faça login para visualizar os seus eventos.';
+            }
+          });
+          if (this.user) {
+            this.authError = '';
+            this.fetchEvents();
+          } else {
+            this.loading = false;
+          }
+        },
+        ensureAuthenticatedAction() {
+          if (!this.user) {
+            this.authError = 'Sessão não encontrada. Faça login novamente.';
+            return false;
+          }
+          return true;
+        },
+        async fetchEvents() {
+          if (!this.ensureAuthenticatedAction()) {
+            this.loading = false;
+            return;
+          }
+          this.loading = true;
+          this.alert = { type: '', message: '' };
+          try {
+            const res = await fetch(`${this.apiBase}/my/events`, {
+              headers: Auth.buildAuthHeaders()
+            });
+            if (res.status === 401) {
+              await Auth.logout();
+              throw new Error('Sessão expirada. Faça login novamente.');
+            }
+            if (!res.ok) throw new Error('Erro ao carregar eventos');
+            const data = await res.json();
+            this.eventos = Array.isArray(data) ? data : [];
+          } catch (error) {
+            console.warn(error);
+            this.alert = { type: 'error', message: error?.message || 'Falha ao sincronizar eventos.' };
+          } finally {
+            this.loading = false;
+          }
+        },
+        resetFilters() {
+          this.filters = { q: '', area: '', startDate: '', endDate: '', minPrice: '', maxPrice: '', onlyFree: false };
+        },
+        filteredEventos() {
+          return (this.eventos || []).filter((evento) => {
+            const query = (this.filters.q || '').toLowerCase();
+            const area = (this.filters.area || '').toLowerCase();
+            const title = (evento.title || '').toLowerCase();
+            const desc = (evento.description || '').toLowerCase();
+            const neighborhood = (evento.neighborhood || '').toLowerCase();
+            const street = (evento.street || '').toLowerCase();
+            const city = (evento.city || '').toLowerCase();
+            const matchText = query ? (title.includes(query) || desc.includes(query)) : true;
+            const matchArea = area ? (neighborhood.includes(area) || street.includes(area) || city.includes(area)) : true;
+            const date = evento.date ? new Date(evento.date) : null;
+            const startDate = this.filters.startDate ? new Date(this.filters.startDate) : null;
+            const endDate = this.filters.endDate ? new Date(this.filters.endDate) : null;
+            const matchStart = startDate && date ? date >= startDate : true;
+            const matchEnd = endDate && date ? date <= new Date(endDate.getTime() + 24 * 60 * 60 * 1000 - 1) : true;
+            const matchPriceMin = this.filters.minPrice !== '' && evento.price != null
+              ? Number(evento.price) >= Number(this.filters.minPrice)
+              : true;
+            const matchPriceMax = this.filters.maxPrice !== '' && evento.price != null
+              ? Number(evento.price) <= Number(this.filters.maxPrice)
+              : true;
+            const matchFree = this.filters.onlyFree ? !!evento.is_free : true;
+            return matchText && matchArea && matchStart && matchEnd && matchPriceMin && matchPriceMax && matchFree;
+          }).sort((a, b) => {
+            const da = a.date ? new Date(a.date).getTime() : Infinity;
+            const db = b.date ? new Date(b.date).getTime() : Infinity;
+            return da - db;
+          });
+        },
+        formatDate(dateString) {
+          if (!dateString) return 'Data a definir';
+          const date = new Date(dateString);
+          if (Number.isNaN(date.getTime())) return 'Data a definir';
+          return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+        },
+        formatLocation(evento) {
+          return [evento.establishment_name, evento.street && `${evento.street}, ${evento.number || ''}`.trim(), evento.neighborhood, evento.city]
+            .filter(Boolean)
+            .join(' • ') || 'Local não informado';
+        },
+        formatPrice(evento) {
+          if (evento?.is_free) return 'Evento gratuito';
+          if (evento?.price === 0) return 'Evento gratuito';
+          if (evento?.price == null || Number.isNaN(Number(evento?.price))) return 'Preço não informado';
+          return Number(evento.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        },
+        openEdit(evento) {
+          this.editingId = evento.id;
+          this.alert = { type: '', message: '' };
+          this.editForm = {
+            id: evento.id,
+            title: evento.title || '',
+            description: evento.description || '',
+            date: evento.date ? this.toDatetimeLocal(evento.date) : '',
+            price: evento.price ?? '',
+            url: evento.url || '',
+            image_url: evento.image_url || '',
+            establishment_id: evento.establishment_id ?? '',
+            establishment_name: evento.establishment_name || '',
+            city: evento.city || '',
+            neighborhood: evento.neighborhood || '',
+            street: evento.street || '',
+            number: evento.number || '',
+            capacity: evento.capacity ?? '',
+            is_free: evento.is_free || false,
+          };
+        },
+        cancelEdit() {
+          this.editingId = null;
+          this.editForm = {};
+        },
+        toDatetimeLocal(dateString) {
+          const date = new Date(dateString);
+          if (Number.isNaN(date.getTime())) return '';
+          const tzOffset = date.getTimezoneOffset();
+          const local = new Date(date.getTime() - tzOffset * 60000);
+          return local.toISOString().slice(0, 16);
+        },
+        normalizeNumber(value) {
+          if (value === '' || value === null || value === undefined) return null;
+          const num = Number(value);
+          return Number.isNaN(num) ? null : num;
+        },
+        buildPayload() {
+          const cleanText = (value) => {
+            if (typeof value === 'string') {
+              const trimmed = value.trim();
+              return trimmed.length ? trimmed : null;
+            }
+            return value ?? null;
+          };
+          return {
+            title: cleanText(this.editForm.title) || '',
+            description: cleanText(this.editForm.description),
+            date: this.editForm.date ? new Date(this.editForm.date).toISOString() : null,
+            price: this.normalizeNumber(this.editForm.price),
+            url: cleanText(this.editForm.url),
+            image_url: cleanText(this.editForm.image_url),
+            establishment_id: this.editForm.establishment_id === '' ? null : Number(this.editForm.establishment_id),
+            establishment_name: cleanText(this.editForm.establishment_name),
+            city: cleanText(this.editForm.city),
+            neighborhood: cleanText(this.editForm.neighborhood),
+            street: cleanText(this.editForm.street),
+            number: cleanText(this.editForm.number),
+            capacity: this.normalizeNumber(this.editForm.capacity),
+            is_free: this.editForm.is_free === true || this.editForm.is_free === 'true',
+          };
+        },
+        async saveEvent() {
+          if (!this.editingId) return;
+          if (!this.ensureAuthenticatedAction()) {
+            return;
+          }
+          this.saving = true;
+          this.alert = { type: '', message: '' };
+          try {
+            const payload = this.buildPayload();
+            const res = await fetch(`${this.apiBase}/events/${encodeURIComponent(this.editingId)}`, {
+              method: 'PUT',
+              headers: Auth.buildAuthHeaders({ 'Content-Type': 'application/json' }),
+              body: JSON.stringify(payload)
+            });
+            if (res.status === 401) {
+              await Auth.logout();
+              throw new Error('Sessão expirada. Faça login novamente.');
+            }
+            if (!res.ok) {
+              const errMsg = await res.text();
+              throw new Error(errMsg || 'Erro ao salvar evento');
+            }
+            await this.fetchEvents();
+            this.alert = { type: 'success', message: 'Evento atualizado com sucesso!' };
+            this.cancelEdit();
+          } catch (error) {
+            console.warn(error);
+            this.alert = { type: 'error', message: error?.message || 'Falha ao salvar.' };
+          } finally {
+            this.saving = false;
+          }
+        },
+        async deleteEvent(evento) {
+          if (!confirm(`Deseja excluir "${evento.title}"?`)) return;
+          if (!this.ensureAuthenticatedAction()) {
+            return;
+          }
+          this.deletingId = evento.id;
+          this.alert = { type: '', message: '' };
+          try {
+            const res = await fetch(`${this.apiBase}/events/${encodeURIComponent(evento.id)}`, {
+              method: 'DELETE',
+              headers: Auth.buildAuthHeaders()
+            });
+            if (res.status === 401) {
+              await Auth.logout();
+              throw new Error('Sessão expirada. Faça login novamente.');
+            }
+            if (!res.ok) throw new Error('Erro ao excluir evento');
+            this.eventos = this.eventos.filter((item) => item.id !== evento.id);
+            if (this.editingId === evento.id) {
+              this.cancelEdit();
+            }
+            this.alert = { type: 'success', message: 'Evento excluído.' };
+          } catch (error) {
+            console.warn(error);
+            this.alert = { type: 'error', message: error?.message || 'Falha ao excluir.' };
+          } finally {
+            this.deletingId = null;
+          }
+        }
+      }
+    }
+  </script>
+</body>
+</html>
+
