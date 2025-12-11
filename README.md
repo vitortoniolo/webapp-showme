@@ -58,8 +58,13 @@ Os usuários podem registrar novos eventos e estabelecimentos por meio de formul
 O sistema mantém os dados persistentes entre sessões, garantindo que os eventos cadastrados fiquem disponíveis mesmo após reinícios da aplicação.
 
 ### Exemplos de telas e fluxos
+Fluxo de funcionamento
+<img width="988" height="462" alt="diagram-export-11-12-2025-20_23_11" src="https://github.com/user-attachments/assets/a27064f9-876a-4d69-bf5e-cced2f88c4af" />
 
-*(espaço reservado para protótipos, mockups ou screenshots do sistema)*  
+
+Tela inicial, home
+<img width="1914" height="919" alt="image" src="https://github.com/user-attachments/assets/dd9bb955-bfe7-467d-99d5-7ab903529e55" />
+
 
 ### Funcionalidades implementadas (versão atual)
 
