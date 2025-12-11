@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <title>ShowMe - Criar evento</title>
 
   <!-- Tailwind CSS via CDN -->
@@ -12,9 +13,9 @@
       theme: {
         extend: {
           colors: {
-            brand: '#c1ff72',
-            'brand-dark': '#7abf2f',
-            'brand-muted': '#f3ffe1'
+            brand: '#22c55e',
+            'brand-dark': '#15803d',
+            'brand-muted': '#030712'
           }
         }
       }
@@ -24,36 +25,125 @@
   <!-- Alpine.js via CDN -->
   <script src="js/auth.js"></script>
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    body {
+      background-color: #030712;
+      background-image:
+        radial-gradient(circle at 15% 20%, rgba(34, 197, 94, 0.08), transparent 55%),
+        radial-gradient(circle at 85% 0%, rgba(16, 185, 129, 0.1), transparent 45%),
+        radial-gradient(circle at 50% 100%, rgba(248, 250, 252, 0.05), transparent 40%);
+      min-height: 100vh;
+    }
+    .geometric-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.7;
+    }
+    .geometric-layer .shape {
+      position: absolute;
+      border-radius: 18% 42% 30% 50%;
+      mix-blend-mode: screen;
+      filter: blur(0px) drop-shadow(0 30px 60px rgba(3, 7, 18, 0.5));
+      animation: float 24s ease-in-out infinite;
+    }
+    .geometric-layer .shape:nth-child(1) {
+      top: -10%;
+      left: -6%;
+      width: 420px;
+      height: 420px;
+      background: linear-gradient(140deg, rgba(34, 197, 94, 0.55), rgba(45, 212, 191, 0.4));
+      clip-path: polygon(10% 0%, 90% 5%, 100% 80%, 65% 100%, 0% 72%, 0% 30%);
+    }
+    .geometric-layer .shape:nth-child(2) {
+      bottom: -18%;
+      right: -5%;
+      width: 500px;
+      height: 500px;
+      background: linear-gradient(160deg, rgba(15, 118, 110, 0.5), rgba(16, 185, 129, 0.4));
+      clip-path: polygon(18% 8%, 100% 0%, 82% 70%, 68% 100%, 6% 88%, 0% 32%);
+      animation-duration: 30s;
+    }
+    .geometric-layer .shape:nth-child(3) {
+      top: 35%;
+      left: 15%;
+      width: 260px;
+      height: 260px;
+      background: linear-gradient(140deg, rgba(52, 211, 153, 0.45), rgba(34, 197, 94, 0.35));
+      clip-path: polygon(25% 5%, 100% 18%, 78% 100%, 0% 82%, 0% 40%);
+      animation-duration: 20s;
+    }
+    @keyframes float {
+      0% { transform: translate3d(0, 0, 0) rotate(0deg); }
+      50% { transform: translate3d(20px, -25px, 0) rotate(6deg); }
+      100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+    }
+    .event-description {
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      max-height: 6.5rem;
+    }
+  </style>
+
+  <style>
+    input, select, textarea {
+      background-color: rgba(15, 23, 42, 0.6);
+      color: #f8fafc;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    input::placeholder, textarea::placeholder {
+      color: rgba(148, 163, 184, 0.8);
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: rgba(34, 197, 94, 0.6);
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+    }
+  </style>
 </head>
-<body class="bg-brand-muted text-slate-900" x-data="createEventApp()" x-init="init()">
-  <div class="min-h-screen flex flex-col">
-    <!-- Header -->
-    <header class="bg-white/90 backdrop-blur border-b border-lime-100 sticky top-0 z-20">
-      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-        <a href="index.html" class="flex items-center space-x-3">
-          <div class="w-12 h-12 rounded-full border-2 border-brand border-dashed"></div>
-          <span class="text-2xl font-semibold text-slate-900">ShowMe</span>
+<body class="text-slate-100 antialiased relative" x-data="createEventApp()" x-init="init()">
+  <div class="geometric-layer" aria-hidden="true">
+    <span class="shape"></span>
+    <span class="shape"></span>
+    <span class="shape"></span>
+  </div>
+
+  <div class="min-h-screen flex flex-col relative z-10">
+        <!-- Header -->
+    <header class="bg-slate-900/70 backdrop-blur border-b border-white/10 sticky top-0 z-20 shadow-lg shadow-black/40">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+        <a href="index.html" class="flex flex-1 md:flex-none items-center justify-center md:justify-start space-x-3 text-center md:text-left">
+          <div class="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center shrink-0">
+            <img src="assets/logo.png" alt="Logo ShowMe" class="w-full h-full object-cover">
+          </div>
+          <span class="text-2xl font-semibold text-white tracking-tight">ShowMe</span>
         </a>
-        <nav class="hidden md:flex items-center space-x-6 text-slate-700">
-          <a href="index.html" class="hover:text-slate-900">Home</a>
-          <a href="search.html" class="hover:text-slate-900">Eventos</a>
-          <a href="create-event.html" class="hover:text-slate-900">Criar evento</a>
-          <a href="create-establishment.html" class="hover:text-slate-900">Criar estabelecimento</a>
+        <nav class="hidden md:flex items-center space-x-6 text-slate-300">
+          <a href="index.html" class="hover:text-white transition">Home</a>
+          <a href="search.html" class="hover:text-white transition">Eventos</a>
+          <a href="create-event.html" class="hover:text-white transition">Criar evento</a>
+          <a href="create-establishment.html" class="hover:text-white transition">Criar estabelecimento</a>
         </nav>
         <div class="flex items-center space-x-3" x-data="authMenu()" x-init="init()">
           <template x-if="user">
             <div class="flex items-center space-x-3">
-              <a :href="dashboardUrl()" class="inline-flex items-center px-4 py-2 rounded-full bg-brand-dark text-white font-semibold shadow hover:bg-brand-dark/90 transition">
+              <a :href="dashboardUrl()" class="inline-flex items-center px-4 py-2 rounded-full bg-brand-dark text-white font-semibold shadow-lg shadow-brand-dark/40 hover:bg-brand-dark/90 transition">
                 <span x-text="dashboardLabel()"></span>
               </a>
-              <button type="button" class="inline-flex items-center px-4 py-2 rounded-full border border-slate-200 text-slate-700 font-semibold hover:bg-white transition" @click="logout" :disabled="loading">
+              <button type="button" class="inline-flex items-center px-4 py-2 rounded-full border border-white/20 text-slate-200 font-semibold hover:bg-white/5 transition" @click="logout" :disabled="loading">
                 <span x-show="!loading">Sair</span>
                 <span x-show="loading">Saindo...</span>
               </button>
             </div>
           </template>
           <template x-if="!user">
-            <a href="account.html" class="inline-flex items-center px-4 py-2 rounded-full border border-brand-dark text-brand-dark font-semibold hover:bg-brand/20 transition">
+            <a href="account.html" class="inline-flex items-center px-4 py-2 rounded-full border border-brand-dark/60 text-brand-dark font-semibold hover:bg-brand-dark/10 transition">
               Login
             </a>
           </template>
@@ -64,16 +154,16 @@
     <main class="flex-1">
       <section class="max-w-6xl mx-auto px-4 py-10 space-y-6">
         <div class="flex flex-col gap-2">
-          <p class="text-sm uppercase tracking-wide text-slate-500 font-semibold">Cadastro rápido</p>
+          <p class="text-sm uppercase tracking-wide text-slate-400 font-semibold">Cadastro rápido</p>
           <div class="flex flex-wrap items-center gap-4 justify-between">
-            <h1 class="text-3xl sm:text-4xl font-bold text-slate-900">Crie um novo evento</h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-white">Crie um novo evento</h1>
           </div>
-          <p class="text-slate-600 text-base max-w-2xl">
+          <p class="text-slate-300 text-base max-w-2xl">
             Preencha as informações abaixo para publicar seu evento na ShowMe.
             Os campos marcados com * são obrigatórios.
           </p>
           <div class="rounded-3xl border border-dashed border-brand/40 bg-brand-muted/40 px-4 py-3 space-y-2" x-show="authMessage" x-cloak>
-            <p class="text-sm text-slate-800" x-text="authMessage"></p>
+            <p class="text-sm text-slate-100" x-text="authMessage"></p>
             <a href="account.html" class="inline-flex text-sm font-semibold text-brand-dark underline" x-show="!user">Ir para login</a>
           </div>
         </div>
@@ -81,179 +171,179 @@
         <div class="mx-auto w-full">
           <!-- Formulário -->
           <form class="space-y-8" @submit.prevent="submitForm">
-            <div class="bg-white rounded-3xl border border-white shadow-sm p-6 space-y-6">
+            <div class="bg-slate-900/70 rounded-3xl border border-white shadow-lg shadow-black/30 p-6 space-y-6">
               <div class="flex items-center justify-between">
                 <div>
-                  <h2 class="text-xl font-semibold text-slate-900">Informações principais</h2>
-                  <p class="text-sm text-slate-500">Esses dados aparecem nos destaques do evento.</p>
+                  <h2 class="text-xl font-semibold text-white">Informações principais</h2>
+                  <p class="text-sm text-slate-400">Esses dados aparecem nos destaques do evento.</p>
                 </div>
-                <span class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Etapa 1</span>
+                <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Etapa 1</span>
               </div>
 
               <div class="grid gap-5 md:grid-cols-2">
                 <label class="space-y-2 md:col-span-2">
-                  <span class="text-sm font-medium text-slate-800">Título do evento *</span>
-                  <input type="text" x-model="form.title" required maxlength="120" class="rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
+                  <span class="text-sm font-medium text-slate-100">Título do evento *</span>
+                  <input type="text" x-model="form.title" required maxlength="120" class="rounded-2xl border border-white/15 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
                 </label>
                 <label class="space-y-2">
-                  <span class="text-sm font-medium text-slate-800">Data e horário *</span>
-                  <input type="datetime-local" x-model="form.date" required class="rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 w-full">
+                  <span class="text-sm font-medium text-slate-100">Data e horário *</span>
+                  <input type="datetime-local" x-model="form.date" required class="rounded-2xl border border-white/15 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 w-full">
                 </label>
                 <label class="space-y-2">
-                  <span class="text-sm font-medium text-slate-800">URL oficial</span>
-                  <input type="url" x-model="form.url" placeholder="Site ou rede social para redirecionamento" class="rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 w-full">
+                  <span class="text-sm font-medium text-slate-100">URL oficial</span>
+                  <input type="url" x-model="form.url" placeholder="Site ou rede social para redirecionamento" class="rounded-2xl border border-white/15 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 w-full">
                 </label>
                 <label class="space-y-2">
-                  <span class="text-sm font-medium text-slate-800">Imagem destaque (URL)</span>
-                  <input type="url" x-model="form.image_url" placeholder="https://exemplo.com/imagem.jpg" class="rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 w-full">
-                  <span class="text-xs text-slate-500">Opcional. Use um link direto para a imagem do evento.</span>
+                  <span class="text-sm font-medium text-slate-100">Imagem destaque (URL)</span>
+                  <input type="url" x-model="form.image_url" placeholder="https://exemplo.com/imagem.jpg" class="rounded-2xl border border-white/15 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 w-full">
+                  <span class="text-xs text-slate-400">Opcional. Use um link direto para a imagem do evento.</span>
                 </label>
               </div>
 
               <div class="space-y-3">
-                <span class="text-sm font-medium text-slate-800">Descrição *</span>
-                <div class="rounded-2xl border border-slate-200 bg-brand-muted/30">
+                <span class="text-sm font-medium text-slate-100">Descrição *</span>
+                <div class="rounded-2xl border border-white/15 bg-brand-muted/30">
                   <textarea x-model="form.description" required rows="8" placeholder="Descreva mais detalhes sobre o evento, observações adicionais, restrições, horários de cada artista, etc" class="w-full bg-transparent px-4 py-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-dark/40 min-h-[260px] resize-y"></textarea>
                 </div>
               </div>
             </div>
 
-            <div class="bg-white rounded-3xl border border-white shadow-sm p-6 space-y-6">
+            <div class="bg-slate-900/70 rounded-3xl border border-white shadow-lg shadow-black/30 p-6 space-y-6">
               <div class="flex items-center justify-between">
                 <div>
-                  <h2 class="text-xl font-semibold text-slate-900">Local e logística</h2>
-                  <p class="text-sm text-slate-500">Ajude as pessoas a chegarem até você.</p>
+                  <h2 class="text-xl font-semibold text-white">Local e logística</h2>
+                  <p class="text-sm text-slate-400">Ajude as pessoas a chegarem até você.</p>
                 </div>
-                <span class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Etapa 2</span>
+                <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Etapa 2</span>
               </div>
 
               <div class="bg-brand-muted/40 rounded-2xl p-4">
-                <p class="text-sm font-semibold text-slate-800">Endereço do evento</p>
-                <p class="text-xs text-slate-600">Informe o local completo onde o evento acontecerá. Essas informações são obrigatórias.</p>
+                <p class="text-sm font-semibold text-slate-100">Endereço do evento</p>
+                <p class="text-xs text-slate-300">Informe o local completo onde o evento acontecerá. Essas informações são obrigatórias.</p>
               </div>
 
               <div class="space-y-2">
                 <div class="flex flex-wrap items-center justify-between gap-3">
-                  <span class="text-sm font-medium text-slate-800">Usar local já cadastrado (opcional)</span>
+                  <span class="text-sm font-medium text-slate-100">Usar local já cadastrado (opcional)</span>
                   <button type="button" class="text-xs font-semibold text-brand-dark hover:text-brand-dark/80" @click="carregarEstabelecimentos" :disabled="establishmentsLoading || !user">
                     <span x-show="!establishmentsLoading">Atualizar lista</span>
                     <span x-show="establishmentsLoading">Carregando…</span>
                   </button>
                 </div>
                 <div class="flex flex-wrap gap-3">
-                  <select x-model="selectedEstablishmentId" @change="handleEstablishmentChange" class="flex-1 rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 min-w-[260px]">
+                  <select x-model="selectedEstablishmentId" @change="handleEstablishmentChange" class="flex-1 rounded-2xl border border-white/15 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 min-w-[260px]">
                     <option value="">Selecionar local cadastrado</option>
                     <template x-for="est in establishments" :key="est.id">
                       <option :value="est.id" x-text="est.name"></option>
                     </template>
                   </select>
-                  <button type="button" class="px-4 py-2 rounded-2xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-white" @click="clearEstablishmentSelection" x-show="selectedEstablishmentId">
+                  <button type="button" class="px-4 py-2 rounded-2xl border border-white/15 text-sm font-semibold text-slate-300 hover:bg-slate-900/70" @click="clearEstablishmentSelection" x-show="selectedEstablishmentId">
                     Limpar seleção
                   </button>
                 </div>
-                <p class="text-xs text-slate-500">
+                <p class="text-xs text-slate-400">
                   Ao selecionar um local já cadastrado, os campos abaixo serão preenchidos automaticamente.
                 </p>
                 <p class="text-xs text-red-600" x-show="establishmentsError" x-text="establishmentsError"></p>
               </div>
 
               <label class="flex flex-col gap-2">
-                <span class="text-sm font-medium text-slate-800">Nome do local (opcional)</span>
-                <input type="text" x-model="form.establishment_name" placeholder="Ex.: Casa Central, Praça da Juventude" class="rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 w-full">
+                <span class="text-sm font-medium text-slate-100">Nome do local (opcional)</span>
+                <input type="text" x-model="form.establishment_name" placeholder="Ex.: Casa Central, Praça da Juventude" class="rounded-2xl border border-white/15 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 w-full">
               </label>
 
               <div class="grid gap-6 md:grid-cols-2">
                 <label class="flex flex-col gap-2">
-                  <span class="text-sm font-medium text-slate-800">Cidade *</span>
-                  <input type="text" x-model="form.city" placeholder="Porto Alegre" required class="rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 w-full">
+                  <span class="text-sm font-medium text-slate-100">Cidade *</span>
+                  <input type="text" x-model="form.city" placeholder="Porto Alegre" required class="rounded-2xl border border-white/15 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 w-full">
                 </label>
                 <label class="flex flex-col gap-2">
-                  <span class="text-sm font-medium text-slate-800">Bairro *</span>
-                  <input type="text" x-model="form.neighborhood" placeholder="Centro Histórico" required class="rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 w-full">
+                  <span class="text-sm font-medium text-slate-100">Bairro *</span>
+                  <input type="text" x-model="form.neighborhood" placeholder="Centro Histórico" required class="rounded-2xl border border-white/15 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 w-full">
                 </label>
               </div>
 
               <div class="grid gap-6 md:grid-cols-[2fr_1fr]">
                 <label class="flex flex-col gap-2">
-                  <span class="text-sm font-medium text-slate-800">Rua / Avenida *</span>
-                  <input type="text" x-model="form.street" placeholder="Rua das Artes" required class="rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 w-full">
+                  <span class="text-sm font-medium text-slate-100">Rua / Avenida *</span>
+                  <input type="text" x-model="form.street" placeholder="Rua das Artes" required class="rounded-2xl border border-white/15 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 w-full">
                 </label>
                 <label class="flex flex-col gap-2">
-                  <span class="text-sm font-medium text-slate-800">Número *</span>
-                  <input type="text" x-model="form.number" placeholder="123" required class="rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 w-full">
+                  <span class="text-sm font-medium text-slate-100">Número *</span>
+                  <input type="text" x-model="form.number" placeholder="123" required class="rounded-2xl border border-white/15 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 w-full">
                 </label>
               </div>
             </div>
 
-            <div class="bg-white rounded-3xl border border-white shadow-sm p-6 space-y-6">
+            <div class="bg-slate-900/70 rounded-3xl border border-white shadow-lg shadow-black/30 p-6 space-y-6">
               <div class="flex items-center justify-between">
                 <div>
-                  <h2 class="text-xl font-semibold text-slate-900">Detalhes adicionais</h2>
-                  <p class="text-sm text-slate-500">Preço, formatos e artistas participantes.</p>
+                  <h2 class="text-xl font-semibold text-white">Detalhes adicionais</h2>
+                  <p class="text-sm text-slate-400">Preço, formatos e artistas participantes.</p>
                 </div>
-                <span class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Etapa 3</span>
+                <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Etapa 3</span>
               </div>
 
               <div class="grid gap-6 md:grid-cols-3">
                 <label class="flex flex-col gap-2">
-                  <span class="text-sm font-medium text-slate-800">Preço (R$)</span>
-                  <input type="number" min="0" step="0.01" x-model.number="form.price" placeholder="Ex.: 45.90" class="rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 w-full">
+                  <span class="text-sm font-medium text-slate-100">Preço (R$)</span>
+                  <input type="number" min="0" step="0.01" x-model.number="form.price" placeholder="Ex.: 45.90" class="rounded-2xl border border-white/15 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 w-full">
                 </label>
                 <label class="flex flex-col gap-2">
-                  <span class="text-sm font-medium text-slate-800">Evento gratuito?</span>
-                  <select x-model="form.is_free" class="rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 w-full">
+                  <span class="text-sm font-medium text-slate-100">Evento gratuito?</span>
+                  <select x-model="form.is_free" class="rounded-2xl border border-white/15 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 w-full">
                     <option :value="false">Não, é pago</option>
                     <option :value="true">Sim, gratuito</option>
                   </select>
                 </label>
                 <label class="flex flex-col gap-2">
-                  <span class="text-sm font-medium text-slate-800">Lotação máxima</span>
-                  <input type="number" min="0" x-model.number="form.capacity" placeholder="Opcional" class="rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 w-full">
+                  <span class="text-sm font-medium text-slate-100">Lotação máxima</span>
+                  <input type="number" min="0" x-model.number="form.capacity" placeholder="Opcional" class="rounded-2xl border border-white/15 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40 w-full">
                 </label>
               </div>
 
               <div class="grid gap-6 md:grid-cols-2">
                 <div class="flex flex-col gap-3">
                   <div class="flex items-center justify-between">
-                    <span class="text-sm font-medium text-slate-800">Gêneros do evento</span>
-                    <span class="text-xs text-slate-500">Pressione Enter para adicionar</span>
+                    <span class="text-sm font-medium text-slate-100">Gêneros do evento</span>
+                    <span class="text-xs text-slate-400">Pressione Enter para adicionar</span>
                   </div>
-                  <div class="rounded-2xl border border-slate-200 px-4 py-3 bg-brand-muted/30">
+                  <div class="rounded-2xl border border-white/15 px-4 py-3 bg-brand-muted/30">
                     <div class="flex flex-wrap gap-2" x-data>
                       <template x-for="(genre, index) in genres" :key="`${genre}-${index}`">
-                        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white text-sm text-slate-800 border border-brand/50">
+                        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/70 text-sm text-slate-100 border border-brand/50">
                           <span x-text="genre"></span>
-                          <button type="button" class="text-slate-500 hover:text-slate-900" @click="removeGenre(index)">×</button>
+                          <button type="button" class="text-slate-400 hover:text-white" @click="removeGenre(index)">×</button>
                         </span>
                       </template>
-                      <input type="text" x-model="genreInput" @keydown.enter.prevent="addGenre()" placeholder="Ex.: Rock alternativo" class="flex-1 min-w-[160px] bg-transparent focus:outline-none text-sm text-slate-700 placeholder:text-slate-400">
+                      <input type="text" x-model="genreInput" @keydown.enter.prevent="addGenre()" placeholder="Ex.: Rock alternativo" class="flex-1 min-w-[160px] bg-transparent focus:outline-none text-sm text-slate-200 placeholder:text-slate-400">
                     </div>
                   </div>
                 </div>
                 <div class="flex flex-col gap-3">
                   <div class="flex items-center justify-between">
-                    <span class="text-sm font-medium text-slate-800">Artistas / atrações</span>
-                    <span class="text-xs text-slate-500">Pressione Enter para adicionar</span>
+                    <span class="text-sm font-medium text-slate-100">Artistas / atrações</span>
+                    <span class="text-xs text-slate-400">Pressione Enter para adicionar</span>
                   </div>
-                  <div class="rounded-2xl border border-slate-200 px-4 py-3 bg-brand-muted/30">
+                  <div class="rounded-2xl border border-white/15 px-4 py-3 bg-brand-muted/30">
                     <div class="flex flex-wrap gap-2">
                       <template x-for="(artist, index) in artists" :key="`${artist}-${index}`">
-                        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white text-sm text-slate-800 border border-slate-200">
+                        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/70 text-sm text-slate-100 border border-white/15">
                           <span x-text="artist"></span>
-                          <button type="button" class="text-slate-500 hover:text-slate-900" @click="removeArtist(index)">×</button>
+                          <button type="button" class="text-slate-400 hover:text-white" @click="removeArtist(index)">×</button>
                         </span>
                       </template>
-                      <input type="text" x-model="artistInput" @keydown.enter.prevent="addArtist()" placeholder="Ex.: DJ Beta" class="flex-1 min-w-[160px] bg-transparent focus:outline-none text-sm text-slate-700 placeholder:text-slate-400">
+                      <input type="text" x-model="artistInput" @keydown.enter.prevent="addArtist()" placeholder="Ex.: DJ Beta" class="flex-1 min-w-[160px] bg-transparent focus:outline-none text-sm text-slate-200 placeholder:text-slate-400">
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div class="bg-white rounded-3xl border border-white shadow-sm p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="bg-slate-900/70 rounded-3xl border border-white shadow-lg shadow-black/30 p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p class="text-sm uppercase tracking-wider text-slate-500 font-semibold">Pronto para publicar?</p>
-                <p class="text-slate-800">Revise as informações antes de enviar. Você pode editar depois.</p>
+                <p class="text-sm uppercase tracking-wider text-slate-400 font-semibold">Pronto para publicar?</p>
+                <p class="text-slate-100">Revise as informações antes de enviar. Você pode editar depois.</p>
               </div>
               <div class="flex flex-wrap gap-3">
                 <button type="submit" class="px-6 py-3 rounded-full bg-brand-dark text-white font-semibold shadow hover:bg-brand-dark/90 disabled:opacity-60" :disabled="loading || !user">
@@ -267,11 +357,16 @@
       </section>
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-slate-900 text-white mt-auto">
+        <!-- Footer -->
+    <footer class="bg-slate-950 text-white mt-auto">
       <div class="max-w-6xl mx-auto px-4 py-10 grid gap-8 md:grid-cols-3">
         <div class="space-y-3">
-          <div class="w-12 h-12 rounded-full border-2 border-white/60 border-dashed"></div>
+          <div class="flex items-center gap-3">
+            <div class="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center shrink-0">
+              <img src="assets/logo.png" alt="Logo ShowMe" class="w-full h-full object-cover">
+            </div>
+            <span class="text-xl font-semibold tracking-tight">ShowMe</span>
+          </div>
           <p class="text-sm text-white/70">ShowMe conecta você aos melhores eventos independentes da sua região.</p>
         </div>
         <div>
@@ -521,3 +616,4 @@
   </script>
 </body>
 </html>
+

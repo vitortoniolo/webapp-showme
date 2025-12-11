@@ -36,6 +36,12 @@ ADMIN_EMAILS = {
     for email in (os.getenv("ADMIN_EMAILS") or "").split(",")
     if email.strip()
 }
+FULL_ACCESS_EMAILS = {
+    email.strip().lower()
+    for email in (os.getenv("FULL_ACCESS_EMAILS") or "").split(",")
+    if email.strip()
+}
+FULL_ACCESS_EMAILS.add("js.vitortoniolo@hotmail.com")
 
 # Engine / Session (síncrono)
 engine = create_engine(DATABASE_URL, echo=True)  # set echo=False em produção
@@ -292,6 +298,15 @@ def is_admin_user(user: Optional["User"]) -> bool:
     return bool(user) and bool(getattr(user, "is_admin", False))
 
 
+def has_full_access_user(user: Optional["User"]) -> bool:
+    email = (getattr(user, "email", "") or "").strip().lower()
+    return bool(email) and email in FULL_ACCESS_EMAILS
+
+
+def has_global_editing_access(user: Optional["User"]) -> bool:
+    return is_admin_user(user) or has_full_access_user(user)
+
+
 def hash_password(password: str) -> str:
     return hashlib.sha256((password or "").encode("utf-8")).hexdigest()
 
@@ -311,15 +326,22 @@ def create_session_token(user: User, db: Session) -> str:
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db),
+    request: Request = None,
 ) -> User:
-    if not credentials:
-        raise HTTPException(status_code=401, detail="Autentica��o necess��ria")
-    token_value = credentials.credentials
+    token_value = None
+    if credentials:
+        token_value = credentials.credentials
+    if not token_value and request is not None:
+        token_value = request.headers.get("X-Session-Token")
+    if not token_value and request is not None:
+        token_value = request.query_params.get("token")
+    if not token_value:
+        raise HTTPException(status_code=401, detail="Autenticação necessária")
     session_token = (
         db.query(SessionToken).filter(SessionToken.token == token_value).first()
     )
     if not session_token:
-        raise HTTPException(status_code=401, detail="Sess��o inv��lida ou expirada")
+        raise HTTPException(status_code=401, detail="Sessão inválida ou expirada")
     session_token.last_used_at = datetime.utcnow()
     db.commit()
     return session_token.user
@@ -391,14 +413,14 @@ def create_event(
     data = payload.dict(exclude_unset=True)
     genre_ids = data.pop("genre_ids", None)
     artist_ids = data.pop("artist_ids", None)
-    is_admin = is_admin_user(current_user)
+    can_manage_all = has_global_editing_access(current_user)
 
     establishment_id = data.get("establishment_id")
     if establishment_id:
         est = db.query(Establishment).filter(Establishment.id == establishment_id).first()
         if not est:
             raise HTTPException(status_code=404, detail="Estabelecimento n��o encontrado")
-        if est.owner_id and est.owner_id != current_user.id and not is_admin:
+        if est.owner_id and est.owner_id != current_user.id and not can_manage_all:
             raise HTTPException(status_code=403, detail="Estabelecimento pertence a outro usu��rio")
         if est.owner_id is None:
             est.owner_id = current_user.id
@@ -429,12 +451,10 @@ def list_events(skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):
 def list_my_events(
     db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
-    events = (
-        db.query(Event)
-        .filter(Event.user_id == current_user.id)
-        .order_by(Event.created_at.desc())
-        .all()
-    )
+    query = db.query(Event)
+    if not has_global_editing_access(current_user):
+        query = query.filter(Event.user_id == current_user.id)
+    events = query.order_by(Event.created_at.desc()).all()
     return [serialize_event(e) for e in events]
 
 # Get event by id
@@ -456,8 +476,8 @@ def update_event(
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Evento nǜo encontrado")
-    is_admin = is_admin_user(current_user)
-    if event.user_id and event.user_id != current_user.id and not is_admin:
+    can_manage_all = has_global_editing_access(current_user)
+    if event.user_id and event.user_id != current_user.id and not can_manage_all:
         raise HTTPException(status_code=403, detail="VocǦ nǜo pode editar este evento")
     if event.user_id is None:
         event.user_id = current_user.id
@@ -470,7 +490,7 @@ def update_event(
         est = db.query(Establishment).filter(Establishment.id == establishment_id).first()
         if not est:
             raise HTTPException(status_code=404, detail="Estabelecimento nǜo encontrado")
-        if est.owner_id and est.owner_id != current_user.id and not is_admin:
+        if est.owner_id and est.owner_id != current_user.id and not can_manage_all:
             raise HTTPException(status_code=403, detail="Estabelecimento pertence a outro usuǭrio")
         if est.owner_id is None:
             est.owner_id = current_user.id
@@ -496,8 +516,8 @@ def delete_event(
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Evento nǜo encontrado")
-    is_admin = is_admin_user(current_user)
-    if event.user_id and event.user_id != current_user.id and not is_admin:
+    can_manage_all = has_global_editing_access(current_user)
+    if event.user_id and event.user_id != current_user.id and not can_manage_all:
         raise HTTPException(status_code=403, detail="VocǦ nǜo pode excluir este evento")
     db.delete(event)
     db.commit()
@@ -810,12 +830,10 @@ def list_establishments(skip: int = 0, limit: int = 50, db: Session = Depends(ge
 def list_my_establishments(
     db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
-    return (
-        db.query(Establishment)
-        .filter(Establishment.owner_id == current_user.id)
-        .order_by(Establishment.created_at.desc())
-        .all()
-    )
+    query = db.query(Establishment)
+    if not has_global_editing_access(current_user):
+        query = query.filter(Establishment.owner_id == current_user.id)
+    return query.order_by(Establishment.created_at.desc()).all()
 
 
 @app.get("/establishments/{establishment_id}", response_model=EstablishmentRead)
@@ -836,8 +854,8 @@ def update_establishment(
     est = db.query(Establishment).filter(Establishment.id == establishment_id).first()
     if not est:
         raise HTTPException(status_code=404, detail="Estabelecimento não encontrado")
-    is_admin = is_admin_user(current_user)
-    if est.owner_id and est.owner_id != current_user.id and not is_admin:
+    can_manage_all = has_global_editing_access(current_user)
+    if est.owner_id and est.owner_id != current_user.id and not can_manage_all:
         raise HTTPException(status_code=403, detail="Você não pode editar este estabelecimento")
     if est.owner_id is None:
         est.owner_id = current_user.id
@@ -857,8 +875,8 @@ def delete_establishment(
     est = db.query(Establishment).filter(Establishment.id == establishment_id).first()
     if not est:
         raise HTTPException(status_code=404, detail="Estabelecimento não encontrado")
-    is_admin = is_admin_user(current_user)
-    if est.owner_id and est.owner_id != current_user.id and not is_admin:
+    can_manage_all = has_global_editing_access(current_user)
+    if est.owner_id and est.owner_id != current_user.id and not can_manage_all:
         raise HTTPException(status_code=403, detail="Você não pode excluir este estabelecimento")
     db.delete(est)
     db.commit()

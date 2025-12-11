@@ -3,61 +3,147 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <title>ShowMe - Meu painel</title>
+
+  <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            brand: '#c1ff72',
-            'brand-dark': '#7abf2f',
-            'brand-muted': '#f3ffe1'
+            brand: '#22c55e',
+            'brand-dark': '#15803d',
+            'brand-muted': '#030712'
           }
         }
       }
     }
   </script>
-  <style>
-    [x-cloak] { display: none !important; }
-    .line-limit-3 {
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-  </style>
+
+  <!-- Alpine.js via CDN -->
   <script src="js/auth.js"></script>
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    body {
+      background-color: #030712;
+      background-image:
+        radial-gradient(circle at 15% 20%, rgba(34, 197, 94, 0.08), transparent 55%),
+        radial-gradient(circle at 85% 0%, rgba(16, 185, 129, 0.1), transparent 45%),
+        radial-gradient(circle at 50% 100%, rgba(248, 250, 252, 0.05), transparent 40%);
+      min-height: 100vh;
+    }
+    .geometric-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.7;
+    }
+    .geometric-layer .shape {
+      position: absolute;
+      border-radius: 18% 42% 30% 50%;
+      mix-blend-mode: screen;
+      filter: blur(0px) drop-shadow(0 30px 60px rgba(3, 7, 18, 0.5));
+      animation: float 24s ease-in-out infinite;
+    }
+    .geometric-layer .shape:nth-child(1) {
+      top: -10%;
+      left: -6%;
+      width: 420px;
+      height: 420px;
+      background: linear-gradient(140deg, rgba(34, 197, 94, 0.55), rgba(45, 212, 191, 0.4));
+      clip-path: polygon(10% 0%, 90% 5%, 100% 80%, 65% 100%, 0% 72%, 0% 30%);
+    }
+    .geometric-layer .shape:nth-child(2) {
+      bottom: -18%;
+      right: -5%;
+      width: 500px;
+      height: 500px;
+      background: linear-gradient(160deg, rgba(15, 118, 110, 0.5), rgba(16, 185, 129, 0.4));
+      clip-path: polygon(18% 8%, 100% 0%, 82% 70%, 68% 100%, 6% 88%, 0% 32%);
+      animation-duration: 30s;
+    }
+    .geometric-layer .shape:nth-child(3) {
+      top: 35%;
+      left: 15%;
+      width: 260px;
+      height: 260px;
+      background: linear-gradient(140deg, rgba(52, 211, 153, 0.45), rgba(34, 197, 94, 0.35));
+      clip-path: polygon(25% 5%, 100% 18%, 78% 100%, 0% 82%, 0% 40%);
+      animation-duration: 20s;
+    }
+    @keyframes float {
+      0% { transform: translate3d(0, 0, 0) rotate(0deg); }
+      50% { transform: translate3d(20px, -25px, 0) rotate(6deg); }
+      100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+    }
+    .event-description {
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      max-height: 6.5rem;
+    }
+  </style>
+
+  <style>
+    input, select, textarea {
+      background-color: rgba(15, 23, 42, 0.6);
+      color: #f8fafc;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    input::placeholder, textarea::placeholder {
+      color: rgba(148, 163, 184, 0.8);
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: rgba(34, 197, 94, 0.6);
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+    }
+  </style>
 </head>
-<body class="bg-brand-muted text-slate-900" x-data="adminDashboardApp()" x-init="init()">
-  <div class="min-h-screen flex flex-col">
-    <header class="bg-white/90 backdrop-blur border-b border-lime-100 sticky top-0 z-20">
-      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-        <a href="index.html" class="flex items-center space-x-3">
-          <div class="w-12 h-12 rounded-full border-2 border-brand border-dashed"></div>
-          <span class="text-2xl font-semibold text-slate-900">ShowMe</span>
+<body class="text-slate-100 antialiased relative" x-data="adminDashboardApp()" x-init="init()">
+  <div class="geometric-layer" aria-hidden="true">
+    <span class="shape"></span>
+    <span class="shape"></span>
+    <span class="shape"></span>
+  </div>
+
+  <div class="min-h-screen flex flex-col relative z-10">
+    <!-- Header -->
+    <header class="bg-slate-900/70 backdrop-blur border-b border-white/10 sticky top-0 z-20 shadow-lg shadow-black/40">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+        <a href="index.html" class="flex flex-1 md:flex-none items-center justify-center md:justify-start space-x-3 text-center md:text-left">
+          <div class="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center shrink-0">
+            <img src="assets/logo.png" alt="Logo ShowMe" class="w-full h-full object-cover">
+          </div>
+          <span class="text-2xl font-semibold text-white tracking-tight">ShowMe</span>
         </a>
-        <nav class="hidden md:flex items-center space-x-6 text-slate-700">
-          <a href="index.html" class="hover:text-slate-900">Home</a>
-          <a href="search.html" class="hover:text-slate-900">Eventos</a>
-          <a href="create-event.html" class="hover:text-slate-900">Criar evento</a>
-          <a href="create-establishment.html" class="hover:text-slate-900">Criar estabelecimento</a>
+        <nav class="hidden md:flex items-center space-x-6 text-slate-300">
+          <a href="index.html" class="hover:text-white transition">Home</a>
+          <a href="search.html" class="hover:text-white transition">Eventos</a>
+          <a href="create-event.html" class="hover:text-white transition">Criar evento</a>
+          <a href="create-establishment.html" class="hover:text-white transition">Criar estabelecimento</a>
         </nav>
         <div class="flex items-center space-x-3" x-data="authMenu()" x-init="init()">
           <template x-if="user">
             <div class="flex items-center space-x-3">
-              <a :href="dashboardUrl()" class="inline-flex items-center px-4 py-2 rounded-full bg-brand-dark text-white font-semibold shadow hover:bg-brand-dark/90 transition">
+              <a :href="dashboardUrl()" class="inline-flex items-center px-4 py-2 rounded-full bg-brand-dark text-white font-semibold shadow-lg shadow-brand-dark/40 hover:bg-brand-dark/90 transition">
                 <span x-text="dashboardLabel()"></span>
               </a>
-              <button type="button" class="inline-flex items-center px-4 py-2 rounded-full border border-slate-200 text-slate-700 font-semibold hover:bg-white transition" @click="logout" :disabled="loading">
+              <button type="button" class="inline-flex items-center px-4 py-2 rounded-full border border-white/20 text-slate-200 font-semibold hover:bg-white/5 transition" @click="logout" :disabled="loading">
                 <span x-show="!loading">Sair</span>
                 <span x-show="loading">Saindo...</span>
               </button>
             </div>
           </template>
           <template x-if="!user">
-            <a href="account.html" class="inline-flex items-center px-4 py-2 rounded-full border border-brand-dark text-brand-dark font-semibold hover:bg-brand/20 transition">
+            <a href="account.html" class="inline-flex items-center px-4 py-2 rounded-full border border-brand-dark/60 text-brand-dark font-semibold hover:bg-brand-dark/10 transition">
               Login
             </a>
           </template>
@@ -68,11 +154,11 @@
     <main class="flex-1">
       <section class="max-w-6xl mx-auto px-4 py-10 space-y-8">
         <div class="space-y-4">
-          <p class="text-sm uppercase tracking-wide text-slate-500 font-semibold">Meu painel</p>
+          <p class="text-sm uppercase tracking-wide text-slate-400 font-semibold">Meu painel</p>
           <div class="flex flex-wrap items-center gap-4 justify-between">
             <div>
-              <h1 class="text-3xl sm:text-4xl font-bold text-slate-900">Central do organizador</h1>
-              <p class="text-slate-600 max-w-2xl">Visualize rapidamente tudo o que você já cadastrou e siga os atalhos para criar novas entradas ou abrir os painéis avançados para edição detalhada.</p>
+              <h1 class="text-3xl sm:text-4xl font-bold text-white">Central do organizador</h1>
+              <p class="text-slate-300 max-w-2xl">Visualize rapidamente tudo o que você já cadastrou e siga os atalhos para criar novas entradas ou abrir os painéis avançados para edição detalhada.</p>
             </div>
             <div class="flex flex-wrap gap-3">
               <a href="create-event.html" class="inline-flex items-center px-5 py-2.5 rounded-full bg-brand-dark text-white font-semibold shadow hover:bg-brand-dark/90 transition">Criar evento</a>
@@ -82,53 +168,53 @@
         </div>
 
         <div class="rounded-3xl border border-dashed border-brand/40 bg-brand-muted/40 px-4 py-3 space-y-2" x-show="authMessage" x-cloak>
-          <p class="text-sm text-slate-800" x-text="authMessage"></p>
+          <p class="text-sm text-slate-100" x-text="authMessage"></p>
           <a href="account.html" class="inline-flex text-sm font-semibold text-brand-dark underline" x-show="!user">Fazer login</a>
         </div>
 
-        <div class="bg-white rounded-3xl border border-white shadow-sm overflow-hidden">
+        <div class="bg-slate-900/70 rounded-3xl border border-white shadow-lg shadow-black/30 overflow-hidden">
           <div class="flex flex-wrap items-center">
-            <button type="button" class="flex-1 min-w-[160px] text-center px-6 py-4 font-semibold text-sm transition" :class="tab === 'events' ? 'bg-brand-muted/60 text-slate-900' : 'text-slate-500 hover:text-slate-800'" @click="tab = 'events'">Meus eventos</button>
-            <button type="button" class="flex-1 min-w-[160px] text-center px-6 py-4 font-semibold text-sm transition" :class="tab === 'establishments' ? 'bg-brand-muted/60 text-slate-900' : 'text-slate-500 hover:text-slate-800'" @click="tab = 'establishments'">Meus estabelecimentos</button>
+            <button type="button" class="flex-1 min-w-[160px] text-center px-6 py-4 font-semibold text-sm transition" :class="tab === 'events' ? 'bg-brand-muted/60 text-white' : 'text-slate-400 hover:text-slate-100'" @click="tab = 'events'">Meus eventos</button>
+            <button type="button" class="flex-1 min-w-[160px] text-center px-6 py-4 font-semibold text-sm transition" :class="tab === 'establishments' ? 'bg-brand-muted/60 text-white' : 'text-slate-400 hover:text-slate-100'" @click="tab = 'establishments'">Meus estabelecimentos</button>
           </div>
-          <div class="border-t border-slate-100 p-6 space-y-6">
+          <div class="border-t border-white/10 p-6 space-y-6">
             <div x-show="tab === 'events'">
-              <div x-show="loading.events" class="text-sm text-slate-500">Carregando eventos cadastrados...</div>
+              <div x-show="loading.events" class="text-sm text-slate-400">Carregando eventos cadastrados...</div>
               <p class="text-sm text-red-600" x-text="errors.events" x-show="errors.events"></p>
               <template x-if="!loading.events && !errors.events && events.length === 0">
-                <div class="rounded-2xl border border-dashed border-slate-200 p-5 bg-brand-muted/30 space-y-2">
-                  <p class="font-semibold text-slate-800">Você ainda não cadastrou eventos.</p>
-                  <p class="text-sm text-slate-600">Publique seu primeiro evento para que ele apareça aqui.</p>
+                <div class="rounded-2xl border border-dashed border-white/15 p-5 bg-brand-muted/30 space-y-2">
+                  <p class="font-semibold text-slate-100">Você ainda não cadastrou eventos.</p>
+                  <p class="text-sm text-slate-300">Publique seu primeiro evento para que ele apareça aqui.</p>
                   <div class="flex flex-wrap gap-3">
                     <a href="create-event.html" class="px-4 py-2 rounded-full bg-brand-dark text-white text-sm font-semibold">Criar evento agora</a>
-                    <a href="account-events.html" class="px-4 py-2 rounded-full border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-white">Abrir painel avançado</a>
+                    <a href="account-events.html" class="px-4 py-2 rounded-full border border-white/15 text-sm font-semibold text-slate-300 hover:bg-slate-900/70">Abrir painel avançado</a>
                   </div>
                 </div>
               </template>
               <div class="space-y-5" x-show="events.length > 0">
                 <template x-for="evento in events" :key="evento.id">
-                  <article class="rounded-3xl border border-slate-100 shadow-sm bg-white p-6 space-y-4">
+                  <article class="rounded-3xl border border-white/10 shadow-lg shadow-black/30 bg-slate-900/70 p-6 space-y-4">
                     <div class="flex flex-wrap items-center justify-between gap-3">
                       <div>
-                        <p class="text-xs uppercase tracking-wide text-slate-500" x-text="formatDate(evento.date)"></p>
-                        <h3 class="text-2xl font-semibold text-slate-900" x-text="evento.title || 'Evento sem título'"></h3>
+                        <p class="text-xs uppercase tracking-wide text-slate-400" x-text="formatDate(evento.date)"></p>
+                        <h3 class="text-2xl font-semibold text-white" x-text="evento.title || 'Evento sem título'"></h3>
                       </div>
-                      <span class="text-sm px-3 py-1 rounded-full" :class="evento.is_free ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'" x-text="formatPrice(evento)"></span>
+                      <span class="text-sm px-3 py-1 rounded-full" :class="evento.is_free ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-800'" x-text="formatPrice(evento)"></span>
                     </div>
-                    <p class="text-sm text-slate-600 line-limit-3" x-text="evento.description || 'Sem descrição detalhada.'"></p>
-                    <div class="flex flex-wrap gap-4 text-sm text-slate-500">
+                    <p class="text-sm text-slate-300 line-limit-3" x-text="evento.description || 'Sem descrição detalhada.'"></p>
+                    <div class="flex flex-wrap gap-4 text-sm text-slate-400">
                       <div class="flex items-center gap-2">
-                        <span class="font-semibold text-slate-700">Local</span>
+                        <span class="font-semibold text-slate-200">Local</span>
                         <span x-text="formatLocation(evento)"></span>
                       </div>
                       <div class="flex items-center gap-2">
-                        <span class="font-semibold text-slate-700">Capacidade</span>
+                        <span class="font-semibold text-slate-200">Capacidade</span>
                         <span x-text="formatCapacity(evento.capacity)"></span>
                       </div>
                     </div>
                     <div class="flex flex-wrap gap-3">
                       <a :href="`event.html?id=${evento.id}`" class="px-4 py-2 rounded-full bg-brand-dark text-white text-sm font-semibold hover:bg-brand-dark/90 transition">Ver página pública</a>
-                      <a href="account-events.html" class="px-4 py-2 rounded-full border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-white transition">Gerenciar eventos</a>
+                      <a href="account-events.html" class="px-4 py-2 rounded-full border border-white/15 text-sm font-semibold text-slate-200 hover:bg-slate-900/70 transition">Gerenciar eventos</a>
                     </div>
                   </article>
                 </template>
@@ -136,38 +222,38 @@
             </div>
 
             <div x-show="tab === 'establishments'">
-              <div x-show="loading.establishments" class="text-sm text-slate-500">Carregando estabelecimentos cadastrados...</div>
+              <div x-show="loading.establishments" class="text-sm text-slate-400">Carregando estabelecimentos cadastrados...</div>
               <p class="text-sm text-red-600" x-text="errors.establishments" x-show="errors.establishments"></p>
               <template x-if="!loading.establishments && !errors.establishments && establishments.length === 0">
-                <div class="rounded-2xl border border-dashed border-slate-200 p-5 bg-brand-muted/30 space-y-2">
-                  <p class="font-semibold text-slate-800">Você ainda não cadastrou estabelecimentos.</p>
-                  <p class="text-sm text-slate-600">Adicione um local fixo para usar novamente em novos eventos.</p>
+                <div class="rounded-2xl border border-dashed border-white/15 p-5 bg-brand-muted/30 space-y-2">
+                  <p class="font-semibold text-slate-100">Você ainda não cadastrou estabelecimentos.</p>
+                  <p class="text-sm text-slate-300">Adicione um local fixo para usar novamente em novos eventos.</p>
                   <div class="flex flex-wrap gap-3">
                     <a href="create-establishment.html" class="px-4 py-2 rounded-full bg-brand-dark text-white text-sm font-semibold">Cadastrar estabelecimento</a>
-                    <a href="account-establishments.html" class="px-4 py-2 rounded-full border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-white">Abrir painel avançado</a>
+                    <a href="account-establishments.html" class="px-4 py-2 rounded-full border border-white/15 text-sm font-semibold text-slate-300 hover:bg-slate-900/70">Abrir painel avançado</a>
                   </div>
                 </div>
               </template>
               <div class="space-y-5" x-show="establishments.length > 0">
                 <template x-for="est in establishments" :key="est.id">
-                  <article class="rounded-3xl border border-slate-100 shadow-sm bg-white p-6 space-y-4">
+                  <article class="rounded-3xl border border-white/10 shadow-lg shadow-black/30 bg-slate-900/70 p-6 space-y-4">
                     <div class="flex flex-wrap items-center justify-between gap-3">
                       <div>
-                        <p class="text-xs uppercase tracking-wide text-slate-500" x-text="est.city || 'Cidade não informada'"></p>
-                        <h3 class="text-2xl font-semibold text-slate-900" x-text="est.name"></h3>
+                        <p class="text-xs uppercase tracking-wide text-slate-400" x-text="est.city || 'Cidade não informada'"></p>
+                        <h3 class="text-2xl font-semibold text-white" x-text="est.name"></h3>
                       </div>
-                      <span class="text-sm px-3 py-1 rounded-full bg-slate-100 text-slate-600" x-text="formatCapacity(est.capacity)"></span>
+                      <span class="text-sm px-3 py-1 rounded-full bg-slate-100 text-slate-800" x-text="formatCapacity(est.capacity)"></span>
                     </div>
-                    <p class="text-sm text-slate-600 line-limit-3" x-text="est.description || 'Sem descrição detalhada.'"></p>
-                    <div class="flex flex-wrap gap-4 text-sm text-slate-500">
+                    <p class="text-sm text-slate-300 line-limit-3" x-text="est.description || 'Sem descrição detalhada.'"></p>
+                    <div class="flex flex-wrap gap-4 text-sm text-slate-400">
                       <div class="flex items-center gap-2">
-                        <span class="font-semibold text-slate-700">Endereço</span>
+                        <span class="font-semibold text-slate-200">Endereço</span>
                         <span x-text="formatLocation(est)"></span>
                       </div>
                     </div>
                     <div class="flex flex-wrap gap-3">
                       <a href="create-event.html" class="px-4 py-2 rounded-full bg-brand-dark text-white text-sm font-semibold hover:bg-brand-dark/90 transition">Criar evento neste local</a>
-                      <a href="account-establishments.html" class="px-4 py-2 rounded-full border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-white transition">Gerenciar estabelecimentos</a>
+                      <a href="account-establishments.html" class="px-4 py-2 rounded-full border border-white/15 text-sm font-semibold text-slate-200 hover:bg-slate-900/70 transition">Gerenciar estabelecimentos</a>
                     </div>
                   </article>
                 </template>
@@ -178,10 +264,16 @@
       </section>
     </main>
 
-    <footer class="bg-slate-900 text-white mt-auto">
+    <!-- Footer -->
+    <footer class="bg-slate-950 text-white mt-auto">
       <div class="max-w-6xl mx-auto px-4 py-10 grid gap-8 md:grid-cols-3">
         <div class="space-y-3">
-          <div class="w-12 h-12 rounded-full border-2 border-white/60 border-dashed"></div>
+          <div class="flex items-center gap-3">
+            <div class="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center shrink-0">
+              <img src="assets/logo.png" alt="Logo ShowMe" class="w-full h-full object-cover">
+            </div>
+            <span class="text-xl font-semibold tracking-tight">ShowMe</span>
+          </div>
           <p class="text-sm text-white/70">ShowMe conecta você aos melhores eventos independentes da sua região.</p>
         </div>
         <div>
