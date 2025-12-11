@@ -4,22 +4,83 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ShowMe - Cadastrar estabelecimento</title>
+
+  <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            brand: '#c1ff72',
-            'brand-dark': '#7abf2f',
-            'brand-muted': '#f3ffe1'
+            brand: '#22c55e',
+            'brand-dark': '#15803d',
+            'brand-muted': '#030712'
           }
         }
       }
     }
   </script>
+
+  <!-- Alpine.js via CDN -->
+  <script src="js/auth.js"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <style>
-    [x-cloak] { display: none !important; }
+    :root {
+      color-scheme: dark;
+    }
+    body {
+      background-color: #030712;
+      background-image:
+        radial-gradient(circle at 15% 20%, rgba(34, 197, 94, 0.08), transparent 55%),
+        radial-gradient(circle at 85% 0%, rgba(16, 185, 129, 0.1), transparent 45%),
+        radial-gradient(circle at 50% 100%, rgba(248, 250, 252, 0.05), transparent 40%);
+      min-height: 100vh;
+    }
+    .geometric-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.7;
+    }
+    .geometric-layer .shape {
+      position: absolute;
+      border-radius: 18% 42% 30% 50%;
+      mix-blend-mode: screen;
+      filter: blur(0px) drop-shadow(0 30px 60px rgba(3, 7, 18, 0.5));
+      animation: float 24s ease-in-out infinite;
+    }
+    .geometric-layer .shape:nth-child(1) {
+      top: -10%;
+      left: -6%;
+      width: 420px;
+      height: 420px;
+      background: linear-gradient(140deg, rgba(34, 197, 94, 0.55), rgba(45, 212, 191, 0.4));
+      clip-path: polygon(10% 0%, 90% 5%, 100% 80%, 65% 100%, 0% 72%, 0% 30%);
+    }
+    .geometric-layer .shape:nth-child(2) {
+      bottom: -18%;
+      right: -5%;
+      width: 500px;
+      height: 500px;
+      background: linear-gradient(160deg, rgba(15, 118, 110, 0.5), rgba(16, 185, 129, 0.4));
+      clip-path: polygon(18% 8%, 100% 0%, 82% 70%, 68% 100%, 6% 88%, 0% 32%);
+      animation-duration: 30s;
+    }
+    .geometric-layer .shape:nth-child(3) {
+      top: 35%;
+      left: 15%;
+      width: 260px;
+      height: 260px;
+      background: linear-gradient(140deg, rgba(52, 211, 153, 0.45), rgba(34, 197, 94, 0.35));
+      clip-path: polygon(25% 5%, 100% 18%, 78% 100%, 0% 82%, 0% 40%);
+      animation-duration: 20s;
+    }
+    @keyframes float {
+      0% { transform: translate3d(0, 0, 0) rotate(0deg); }
+      50% { transform: translate3d(20px, -25px, 0) rotate(6deg); }
+      100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+    }
     .event-description {
       display: -webkit-box;
       -webkit-line-clamp: 4;
@@ -28,37 +89,59 @@
       max-height: 6.5rem;
     }
   </style>
-  <script src="js/auth.js"></script>
-  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <style>
+    input, select, textarea {
+      background-color: rgba(15, 23, 42, 0.6);
+      color: #f8fafc;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    input::placeholder, textarea::placeholder {
+      color: rgba(148, 163, 184, 0.8);
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: rgba(34, 197, 94, 0.6);
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+    }
+  </style>
 </head>
-<body class="bg-brand-muted text-slate-900" x-data="createEstablishmentApp()" x-init="init()">
-  <div class="min-h-screen flex flex-col">
-    <header class="bg-white/90 backdrop-blur border-b border-lime-100 sticky top-0 z-20">
-      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-        <a href="index.html" class="flex items-center space-x-3">
-          <div class="w-12 h-12 rounded-full border-2 border-brand border-dashed"></div>
-          <span class="text-2xl font-semibold text-slate-900">ShowMe</span>
+<body class="text-slate-100 antialiased relative" x-data="createEstablishmentApp()" x-init="init()">
+  <div class="geometric-layer" aria-hidden="true">
+    <span class="shape"></span>
+    <span class="shape"></span>
+    <span class="shape"></span>
+  </div>
+
+  <div class="min-h-screen flex flex-col relative z-10">
+    <header class="bg-slate-900/70 backdrop-blur border-b border-white/10 sticky top-0 z-20 shadow-lg shadow-black/40">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+        <a href="index.html" class="flex flex-1 md:flex-none items-center justify-center md:justify-start space-x-3 text-center md:text-left">
+          <div class="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center shrink-0">
+            <img src="assets/logo.png" alt="Logo ShowMe" class="w-full h-full object-cover">
+          </div>
+          <span class="text-2xl font-semibold text-white tracking-tight">ShowMe</span>
         </a>
-        <nav class="hidden md:flex items-center space-x-6 text-slate-700">
-          <a href="index.html" class="hover:text-slate-900">Home</a>
-          <a href="search.html" class="hover:text-slate-900">Eventos</a>
-          <a href="create-event.html" class="hover:text-slate-900">Criar evento</a>
-          <a href="create-establishment.html" class="hover:text-slate-900">Criar estabelecimento</a>
+        <nav class="hidden md:flex items-center space-x-6 text-slate-300">
+          <a href="index.html" class="hover:text-white transition">Home</a>
+          <a href="search.html" class="hover:text-white transition">Eventos</a>
+          <a href="create-event.html" class="hover:text-white transition">Criar evento</a>
+          <a href="create-establishment.html" class="hover:text-white transition">Criar estabelecimento</a>
         </nav>
         <div class="flex items-center space-x-3" x-data="authMenu()" x-init="init()">
           <template x-if="user">
             <div class="flex items-center space-x-3">
-              <a :href="dashboardUrl()" class="inline-flex items-center px-4 py-2 rounded-full bg-brand-dark text-white font-semibold shadow hover:bg-brand-dark/90 transition">
+              <a :href="dashboardUrl()" class="inline-flex items-center px-4 py-2 rounded-full bg-brand-dark text-white font-semibold shadow-lg shadow-brand-dark/40 hover:bg-brand-dark/90 transition">
                 <span x-text="dashboardLabel()"></span>
               </a>
-              <button type="button" class="inline-flex items-center px-4 py-2 rounded-full border border-slate-200 text-slate-700 font-semibold hover:bg-white transition" @click="logout" :disabled="loading">
+              <button type="button" class="inline-flex items-center px-4 py-2 rounded-full border border-white/20 text-slate-200 font-semibold hover:bg-white/5 transition" @click="logout" :disabled="loading">
                 <span x-show="!loading">Sair</span>
                 <span x-show="loading">Saindo...</span>
               </button>
             </div>
           </template>
           <template x-if="!user">
-            <a href="account.html" class="inline-flex items-center px-4 py-2 rounded-full border border-brand-dark text-brand-dark font-semibold hover:bg-brand/20 transition">
+            <a href="account.html" class="inline-flex items-center px-4 py-2 rounded-full border border-brand-dark/60 text-brand-dark font-semibold hover:bg-brand-dark/10 transition">
               Login
             </a>
           </template>
@@ -69,12 +152,12 @@
     <main class="flex-1">
       <section class="max-w-6xl mx-auto px-4 py-10 space-y-6">
         <div class="space-y-4">
-          <p class="text-sm uppercase tracking-wide text-slate-500 font-semibold">Central de estabelecimentos</p>
-          <h1 class="text-3xl sm:text-4xl font-bold text-slate-900">Cadastre um novo estabelecimento</h1>
-          <p class="text-slate-700 text-base leading-relaxed">
+          <p class="text-sm uppercase tracking-wide text-slate-400 font-semibold">Central de estabelecimentos</p>
+          <h1 class="text-3xl sm:text-4xl font-bold text-white">Cadastre um novo estabelecimento</h1>
+          <p class="text-slate-200 text-base leading-relaxed">
             Reúna todas as informações do local e publique em poucos passos. Esses dados abastecem o formulário de eventos e ajudam as pessoas a encontrarem a melhor experiência presencial.
           </p>
-          <ul class="text-sm text-slate-600 space-y-2">
+          <ul class="text-sm text-slate-300 space-y-2">
             <li class="flex items-start gap-2">
               <span class="text-brand-dark mt-1">•</span>
               <span>Utilize o mesmo padrão dos eventos para manter uma identidade consistente.</span>
@@ -86,7 +169,7 @@
           </ul>
         </div>
         <div class="rounded-3xl border border-dashed border-brand/40 bg-brand-muted/40 px-4 py-3 space-y-2" x-show="authMessage" x-cloak>
-          <p class="text-sm text-slate-800" x-text="authMessage"></p>
+          <p class="text-sm text-slate-100" x-text="authMessage"></p>
           <a href="account.html" class="inline-flex text-sm font-semibold text-brand-dark underline" x-show="!user">Ir para login</a>
         </div>
       </section>
@@ -102,93 +185,93 @@
                 Fechar
               </button>
             </div>
-            <pre x-show="alert.payload" x-cloak class="text-xs bg-white/60 rounded-2xl p-3 overflow-auto max-h-48"
+            <pre x-show="alert.payload" x-cloak class="text-xs bg-slate-900/50 rounded-2xl p-3 overflow-auto max-h-48"
                  x-text="JSON.stringify(alert.payload, null, 2)"></pre>
           </div>
 
           <form class="space-y-8" @submit.prevent="submitForm">
-              <div class="bg-white rounded-3xl border border-white shadow-sm p-6 space-y-5">
+              <div class="bg-slate-900/70 rounded-3xl border border-white shadow-lg shadow-black/30 p-6 space-y-5">
                 <div class="flex items-center justify-between gap-4">
                   <div>
-                    <h2 class="text-xl font-semibold text-slate-900">Informações principais</h2>
-                    <p class="text-sm text-slate-500">Esses dados serão exibidos nos detalhes do espaço.</p>
+                    <h2 class="text-xl font-semibold text-white">Informações principais</h2>
+                    <p class="text-sm text-slate-400">Esses dados serão exibidos nos detalhes do espaço.</p>
                   </div>
-                  <span class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Etapa 1</span>
+                  <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Etapa 1</span>
                 </div>
                 <label class="flex flex-col gap-2">
-                  <span class="text-sm font-medium text-slate-800">Nome do estabelecimento *</span>
+                  <span class="text-sm font-medium text-slate-100">Nome do estabelecimento *</span>
                   <input type="text" x-model="form.name" required maxlength="140" placeholder="Ex.: Casa Aurora, Galpão 219"
-                         class="rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
+                         class="rounded-2xl border border-white/15 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
                 </label>
                 <div class="flex flex-col gap-2">
-                  <span class="text-sm font-medium text-slate-800">Descrição do espaço</span>
-                  <div class="rounded-2xl border border-slate-200 bg-brand-muted/30">
+                  <span class="text-sm font-medium text-slate-100">Descrição do espaço</span>
+                  <div class="rounded-2xl border border-white/15 bg-brand-muted/30">
                     <textarea x-model="form.description" rows="6" placeholder="Explique o formato do espaço, estrutura disponível e diferenciais."
                               class="w-full bg-transparent px-4 py-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-dark/40 resize-y"></textarea>
                   </div>
                 </div>
                 <label class="flex flex-col gap-2">
-                  <span class="text-sm font-medium text-slate-800">Imagem destaque (URL)</span>
+                  <span class="text-sm font-medium text-slate-100">Imagem destaque (URL)</span>
                   <input type="url" x-model="form.image_url" placeholder="https://exemplo.com/foto.jpg"
-                         class="rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
-                  <span class="text-xs text-slate-500">Opcional. Se informado, será usada no card de pré-visualização.</span>
+                         class="rounded-2xl border border-white/15 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
+                  <span class="text-xs text-slate-400">Opcional. Se informado, será usada no card de pré-visualização.</span>
                 </label>
               </div>
 
-              <div class="bg-white rounded-3xl border border-white shadow-sm p-6 space-y-5">
+              <div class="bg-slate-900/70 rounded-3xl border border-white shadow-lg shadow-black/30 p-6 space-y-5">
                 <div class="flex items-center justify-between gap-4">
                   <div>
-                    <h2 class="text-xl font-semibold text-slate-900">Localização e acesso</h2>
-                    <p class="text-sm text-slate-500">Use o mesmo padrão que aparece no formulário de eventos.</p>
+                    <h2 class="text-xl font-semibold text-white">Localização e acesso</h2>
+                    <p class="text-sm text-slate-400">Use o mesmo padrão que aparece no formulário de eventos.</p>
                   </div>
-                  <span class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Etapa 2</span>
+                  <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Etapa 2</span>
                 </div>
                 <div class="grid gap-5 md:grid-cols-2">
                   <label class="flex flex-col gap-2">
-                    <span class="text-sm font-medium text-slate-800">Cidade *</span>
+                    <span class="text-sm font-medium text-slate-100">Cidade *</span>
                     <input type="text" x-model="form.city" required placeholder="Porto Alegre"
-                           class="rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
+                           class="rounded-2xl border border-white/15 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
                   </label>
                   <label class="flex flex-col gap-2">
-                    <span class="text-sm font-medium text-slate-800">Bairro *</span>
+                    <span class="text-sm font-medium text-slate-100">Bairro *</span>
                     <input type="text" x-model="form.neighborhood" required placeholder="Cidade Baixa"
-                           class="rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
+                           class="rounded-2xl border border-white/15 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
                   </label>
                 </div>
                 <div class="grid gap-5 md:grid-cols-[2fr_1fr]">
                   <label class="flex flex-col gap-2">
-                    <span class="text-sm font-medium text-slate-800">Rua / Avenida *</span>
+                    <span class="text-sm font-medium text-slate-100">Rua / Avenida *</span>
                     <input type="text" x-model="form.street" required placeholder="Rua da Aurora"
-                           class="rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
+                           class="rounded-2xl border border-white/15 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
                   </label>
                   <label class="flex flex-col gap-2">
-                    <span class="text-sm font-medium text-slate-800">Número *</span>
+                    <span class="text-sm font-medium text-slate-100">Número *</span>
                     <input type="text" x-model="form.number" required placeholder="1280"
-                           class="rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
+                           class="rounded-2xl border border-white/15 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
                   </label>
                 </div>
-                <div class="rounded-2xl border border-dashed border-slate-200 p-4 bg-brand-muted/40">
-                  <p class="text-sm font-semibold text-slate-800">Dica</p>
-                  <p class="text-sm text-slate-600">Se o local for itinerante (ex.: praça, parque), utilize o ponto de referência principal e mantenha o padrão ao criar eventos.</p>
+                <div class="rounded-2xl border border-dashed border-white/15 p-4 bg-brand-muted/40">
+                  <p class="text-sm font-semibold text-slate-100">Dica</p>
+                  <p class="text-sm text-slate-300">Se o local for itinerante (ex.: praça, parque), utilize o ponto de referência principal e mantenha o padrão ao criar eventos.</p>
                 </div>
               </div>
 
-              <div class="bg-white rounded-3xl border border-white shadow-sm p-6 space-y-5">
+              <div class="bg-slate-900/70 rounded-3xl border border-white shadow-lg shadow-black/30 p-6 space-y-5">
                 <div class="flex items-center justify-between gap-4">
                   <div>
-                    <h2 class="text-xl font-semibold text-slate-900">Estrutura e revisão</h2>
-                    <p class="text-sm text-slate-500">Finalize conferindo os dados antes de enviar.</p>
+                    <h2 class="text-xl font-semibold text-white">Estrutura e revisão</h2>
+                    <p class="text-sm text-slate-400">Finalize conferindo os dados antes de enviar.</p>
                   </div>
-                  <span class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Etapa 3</span>
+                  <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Etapa 3</span>
                 </div>
                 <label class="flex flex-col gap-2 max-w-xs">
-                  <span class="text-sm font-medium text-slate-800">Capacidade máxima</span>
+                  <span class="text-sm font-medium text-slate-100">Capacidade máxima</span>
                   <input type="number" min="0" x-model.number="form.capacity" placeholder="Ex.: 320"
-                         class="rounded-2xl border border-slate-200 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
+                         class="rounded-2xl border border-white/15 px-4 py-2.5 focus:border-brand-dark focus:ring-brand-dark/40">
                 </label>
                 <div class="space-y-4">
-                  <p class="text-sm font-semibold text-slate-800">Pré-visualização</p>
-                  <article class="event-card min-w-[280px] bg-white rounded-3xl border border-white shadow-lg shadow-brand/20 p-6 flex flex-col gap-6">
+                  <p class="text-sm font-semibold text-slate-100">Pré-visualização</p>
+                  <article class="event-card min-w-[280px] bg-slate-900/70 rounded-3xl border border-white shadow-lg shadow-brand/20 p-6 flex flex-col gap-6">
                     <div class="space-y-4">
                       <div class="h-40 rounded-2xl border-2 border-dashed border-brand/70 bg-brand-muted/50 overflow-hidden">
                         <template x-if="form.image_url">
@@ -199,14 +282,14 @@
                         </div>
                       </div>
                       <div class="space-y-2">
-                        <span class="inline-flex items-center px-3 py-1 rounded-full bg-brand/60 text-slate-800 text-sm font-semibold" x-text="form.city || 'Cidade a definir'"></span>
-                        <h3 class="text-2xl font-semibold text-slate-900" x-text="form.name || 'Nome do estabelecimento'"></h3>
-                        <p class="text-slate-600 event-description" x-text="form.description || 'Descreva a estrutura, facilidades e diferenciais do espaço.'"></p>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full bg-brand/60 text-slate-100 text-sm font-semibold" x-text="form.city || 'Cidade a definir'"></span>
+                        <h3 class="text-2xl font-semibold text-white" x-text="form.name || 'Nome do estabelecimento'"></h3>
+                        <p class="text-slate-300 event-description" x-text="form.description || 'Descreva a estrutura, facilidades e diferenciais do espaço.'"></p>
                       </div>
                     </div>
                     <div class="flex items-center justify-between">
                       <div class="space-y-1">
-                        <p class="text-sm text-slate-500" x-text="form.neighborhood || 'Bairro não informado'"></p>
+                        <p class="text-sm text-slate-400" x-text="form.neighborhood || 'Bairro não informado'"></p>
                         <p class="text-base font-semibold text-brand-dark" x-text="form.capacity ? form.capacity + ' pessoas' : 'Capacidade livre'"></p>
                       </div>
                       <button type="button" class="inline-flex items-center px-4 py-2 rounded-full bg-brand-dark text-white text-sm font-semibold shadow">
@@ -216,7 +299,7 @@
                   </article>
                 </div>
                 <div class="flex flex-wrap gap-3 items-center pt-3">
-                  <button type="button" @click="resetForm()" class="px-4 py-2 rounded-2xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-white transition">
+                  <button type="button" @click="resetForm()" class="px-4 py-2 rounded-2xl border border-white/15 text-sm font-semibold text-slate-300 hover:bg-slate-900/70 transition">
                     Recomeçar
                   </button>
                   <button type="submit" :disabled="loading || !user"
@@ -233,10 +316,15 @@
       </section>
     </main>
 
-    <footer class="bg-slate-900 text-white mt-auto">
+    <footer class="bg-slate-950 text-white mt-auto">
       <div class="max-w-6xl mx-auto px-4 py-10 grid gap-8 md:grid-cols-3">
         <div class="space-y-3">
-          <div class="w-12 h-12 rounded-full border-2 border-white/60 border-dashed"></div>
+          <div class="flex items-center gap-3">
+            <div class="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center shrink-0">
+              <img src="assets/logo.png" alt="Logo ShowMe" class="w-full h-full object-cover">
+            </div>
+            <span class="text-xl font-semibold tracking-tight">ShowMe</span>
+          </div>
           <p class="text-sm text-white/70">ShowMe conecta você aos melhores eventos independentes da sua região.</p>
         </div>
         <div>

@@ -12,9 +12,9 @@
       theme: {
         extend: {
           colors: {
-            brand: '#c1ff72',
-            'brand-dark': '#7abf2f',
-            'brand-muted': '#f3ffe1'
+            brand: '#22c55e',
+            'brand-dark': '#15803d',
+            'brand-muted': '#030712'
           }
         }
       }
@@ -25,6 +25,62 @@
   <script src="js/auth.js"></script>
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <style>
+    :root {
+      color-scheme: dark;
+    }
+    body {
+      background-color: #030712;
+      background-image:
+        radial-gradient(circle at 15% 20%, rgba(34, 197, 94, 0.08), transparent 55%),
+        radial-gradient(circle at 85% 0%, rgba(16, 185, 129, 0.1), transparent 45%),
+        radial-gradient(circle at 50% 100%, rgba(248, 250, 252, 0.05), transparent 40%);
+      min-height: 100vh;
+    }
+    .geometric-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.7;
+    }
+    .geometric-layer .shape {
+      position: absolute;
+      border-radius: 18% 42% 30% 50%;
+      mix-blend-mode: screen;
+      filter: blur(0px) drop-shadow(0 30px 60px rgba(3, 7, 18, 0.5));
+      animation: float 24s ease-in-out infinite;
+    }
+    .geometric-layer .shape:nth-child(1) {
+      top: -10%;
+      left: -6%;
+      width: 420px;
+      height: 420px;
+      background: linear-gradient(140deg, rgba(34, 197, 94, 0.55), rgba(45, 212, 191, 0.4));
+      clip-path: polygon(10% 0%, 90% 5%, 100% 80%, 65% 100%, 0% 72%, 0% 30%);
+    }
+    .geometric-layer .shape:nth-child(2) {
+      bottom: -18%;
+      right: -5%;
+      width: 500px;
+      height: 500px;
+      background: linear-gradient(160deg, rgba(15, 118, 110, 0.5), rgba(16, 185, 129, 0.4));
+      clip-path: polygon(18% 8%, 100% 0%, 82% 70%, 68% 100%, 6% 88%, 0% 32%);
+      animation-duration: 30s;
+    }
+    .geometric-layer .shape:nth-child(3) {
+      top: 35%;
+      left: 15%;
+      width: 260px;
+      height: 260px;
+      background: linear-gradient(140deg, rgba(52, 211, 153, 0.45), rgba(34, 197, 94, 0.35));
+      clip-path: polygon(25% 5%, 100% 18%, 78% 100%, 0% 82%, 0% 40%);
+      animation-duration: 20s;
+    }
+    @keyframes float {
+      0% { transform: translate3d(0, 0, 0) rotate(0deg); }
+      50% { transform: translate3d(20px, -25px, 0) rotate(6deg); }
+      100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+    }
     .event-description {
       display: -webkit-box;
       -webkit-line-clamp: 4;
@@ -34,35 +90,42 @@
     }
   </style>
 </head>
-<body class="bg-brand-muted text-slate-900" x-data="homeApp()" x-init="init()">
-  <div class="min-h-screen flex flex-col">
+<body class="text-slate-100 antialiased relative" x-data="homeApp()" x-init="init()">
+  <div class="geometric-layer" aria-hidden="true">
+    <span class="shape"></span>
+    <span class="shape"></span>
+    <span class="shape"></span>
+  </div>
+  <div class="min-h-screen flex flex-col relative z-10">
     <!-- Header -->
-    <header class="bg-white/90 backdrop-blur border-b border-lime-100 sticky top-0 z-20">
-      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-        <a href="index.html" class="flex items-center space-x-3">
-          <div class="w-12 h-12 rounded-full border-2 border-brand border-dashed"></div>
-          <span class="text-2xl font-semibold text-slate-900">ShowMe</span>
+    <header class="bg-slate-900/70 backdrop-blur border-b border-white/10 sticky top-0 z-20 shadow-lg shadow-black/40">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+        <a href="index.html" class="flex flex-1 md:flex-none items-center justify-center md:justify-start space-x-3 text-center md:text-left">
+          <div class="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center shrink-0">
+            <img src="assets/logo.png" alt="Logo ShowMe" class="w-full h-full object-cover">
+          </div>
+          <span class="text-2xl font-semibold text-white tracking-tight">ShowMe</span>
         </a>
-        <nav class="hidden md:flex items-center space-x-6 text-slate-700">
-          <a href="index.html" class="hover:text-slate-900">Home</a>
-          <a href="search.html" class="hover:text-slate-900">Eventos</a>
-          <a href="create-event.html" class="hover:text-slate-900">Criar evento</a>
-          <a href="create-establishment.html" class="hover:text-slate-900">Criar estabelecimento</a>
+        <nav class="hidden md:flex items-center space-x-6 text-slate-300">
+          <a href="index.html" class="hover:text-white transition">Home</a>
+          <a href="search.html" class="hover:text-white transition">Eventos</a>
+          <a href="create-event.html" class="hover:text-white transition">Criar evento</a>
+          <a href="create-establishment.html" class="hover:text-white transition">Criar estabelecimento</a>
         </nav>
         <div class="flex items-center space-x-3" x-data="authMenu()" x-init="init()">
           <template x-if="user">
             <div class="flex items-center space-x-3">
-              <a :href="dashboardUrl()" class="inline-flex items-center px-4 py-2 rounded-full bg-brand-dark text-white font-semibold shadow hover:bg-brand-dark/90 transition">
+              <a :href="dashboardUrl()" class="inline-flex items-center px-4 py-2 rounded-full bg-brand-dark text-white font-semibold shadow-lg shadow-brand-dark/40 hover:bg-brand-dark/90 transition">
                 <span x-text="dashboardLabel()"></span>
               </a>
-              <button type="button" class="inline-flex items-center px-4 py-2 rounded-full border border-slate-200 text-slate-700 font-semibold hover:bg-white transition" @click="logout" :disabled="loading">
+              <button type="button" class="inline-flex items-center px-4 py-2 rounded-full border border-white/20 text-slate-200 font-semibold hover:bg-white/5 transition" @click="logout" :disabled="loading">
                 <span x-show="!loading">Sair</span>
                 <span x-show="loading">Saindo...</span>
               </button>
             </div>
           </template>
           <template x-if="!user">
-            <a href="account.html" class="inline-flex items-center px-4 py-2 rounded-full border border-brand-dark text-brand-dark font-semibold hover:bg-brand/20 transition">
+            <a href="account.html" class="inline-flex items-center px-4 py-2 rounded-full border border-brand-dark/60 text-brand-dark font-semibold hover:bg-brand-dark/10 transition">
               Login
             </a>
           </template>
@@ -72,35 +135,33 @@
 
     <main class="flex-1">
       <!-- Hero -->
-      <section class="bg-gradient-to-r from-brand via-white to-brand-muted">
-        <div class="max-w-6xl mx-auto px-4 py-16 grid gap-12 lg:grid-cols-2 items-center">
-          <div class="space-y-6">
-            <span class="inline-flex items-center px-3 py-1 text-sm font-medium bg-white/70 rounded-full border border-white/60 text-slate-700">
-              Viva experiências inesquecíveis
-            </span>
-            <h1 class="text-4xl sm:text-5xl font-bold text-slate-900 leading-tight">
-              Descubra eventos incríveis pertinho de você
-            </h1>
-            <p class="text-lg text-slate-700">
-              Explore shows de pequenos artistas em uma plataforma feita para conectar você ao que acontece na cidade. Cadastre seus eventos e alcance mais pessoas.
-            </p>
-            <div class="flex flex-wrap gap-4">
-              <a href="#eventos" class="px-6 py-3 rounded-full bg-brand-dark text-white font-semibold shadow-lg shadow-brand/40 hover:bg-brand-dark/90 transition">
-                Ver eventos
+      <section class="relative isolate overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-brand-muted/40"></div>
+        <div class="max-w-4xl mx-auto px-4 py-20 text-center space-y-8 relative z-10">
+          <span class="inline-flex items-center justify-center px-4 py-1.5 text-xs font-semibold tracking-[0.4em] uppercase bg-white/5 border border-white/10 rounded-full text-slate-100">
+            Viva experiências inesquecíveis
+          </span>
+          <h1 class="text-4xl sm:text-5xl font-bold text-white leading-tight">
+            Descubra eventos incríveis pertinho de você
+          </h1>
+          <p class="text-lg text-slate-200/90">
+            Encontre shows autorais, feiras independentes e experiências únicas em um só lugar. Cadastre seus eventos, compartilhe com o público e mantenha tudo atualizado em tempo real.
+          </p>
+          <div class="flex flex-wrap justify-center gap-4">
+            <a href="#eventos" class="px-6 py-3 rounded-full bg-brand text-slate-900 font-semibold shadow-2xl shadow-brand/40 hover:bg-emerald-400 transition">
+              Ver eventos
+            </a>
+            <template x-if="user">
+              <a href="create-event.html" class="px-6 py-3 rounded-full border border-white/20 text-white font-semibold hover:border-brand hover:text-brand transition">
+                Criar evento
               </a>
-              <template x-if="user">
-                <a href="create-event.html" class="px-6 py-3 rounded-full border border-slate-200 text-slate-800 font-semibold hover:border-brand-dark hover:text-brand-dark transition">
-                  Criar evento
-                </a>
-              </template>
-              <template x-if="!user">
-                <a href="account.html" class="px-6 py-3 rounded-full border border-slate-200 text-slate-800 font-semibold hover:border-brand-dark hover:text-brand-dark transition">
-                  Entre para criar
-                </a>
-              </template>
-            </div>
+            </template>
+            <template x-if="!user">
+              <a href="account.html" class="px-6 py-3 rounded-full border border-white/20 text-white font-semibold hover:border-brand hover:text-brand transition">
+                Entre para criar
+              </a>
+            </template>
           </div>
-          <div class="w-full h-64 sm:h-80 lg:h-[26rem] rounded-3xl border-4 border-dashed border-white/80 bg-white/50"></div>
         </div>
       </section>
 
@@ -108,14 +169,14 @@
       <section id="eventos" class="max-w-6xl mx-auto px-4 py-16 space-y-8">
         <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
           <div class="space-y-2">
-            <h2 class="text-3xl font-bold text-slate-900">Eventos próximos</h2>
-            <p class="text-slate-600">Descubra experiências selecionadas e atualizadas em tempo real.</p>
+            <h2 class="text-3xl font-bold text-white">Eventos próximos</h2>
+            <p class="text-slate-300">Seleção atualizada em tempo real com experiências independentes pela cidade.</p>
           </div>
           <div class="flex items-center gap-2">
-            <button @click="scrollCarousel(-1)" class="h-11 w-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-white hover:text-slate-900 transition" aria-label="Eventos anteriores">
+            <button @click="scrollCarousel(-1)" class="h-11 w-11 rounded-full border border-white/20 flex items-center justify-center text-slate-200 hover:bg-white/10 hover:text-white transition" aria-label="Eventos anteriores">
               &#8592;
             </button>
-            <button @click="scrollCarousel(1)" class="h-11 w-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-white hover:text-slate-900 transition" aria-label="Próximos eventos">
+            <button @click="scrollCarousel(1)" class="h-11 w-11 rounded-full border border-white/20 flex items-center justify-center text-slate-200 hover:bg-white/10 hover:text-white transition" aria-label="Próximos eventos">
               &#8594;
             </button>
           </div>
@@ -124,18 +185,18 @@
         <div class="relative">
           <div class="flex gap-6 overflow-x-auto snap-x snap-mandatory pb-6" x-ref="carousel">
             <template x-if="eventos.length === 0">
-              <div class="min-w-[280px] max-w-xs flex-1 bg-white/70 rounded-2xl border border-white shadow-sm p-6 flex flex-col justify-between">
+              <div class="min-w-[280px] max-w-xs flex-1 bg-slate-900/70 rounded-2xl border border-white/10 shadow-lg shadow-black/40 p-6 flex flex-col justify-between">
                 <div class="space-y-3">
-                  <h3 class="text-xl font-semibold text-slate-900">Carregando eventos</h3>
-                  <p class="text-slate-600">Estamos preparando novidades para você. Volte em instantes.</p>
+                  <h3 class="text-xl font-semibold text-white">Carregando eventos</h3>
+                  <p class="text-slate-300">Estamos preparando novidades para você. Volte em instantes.</p>
                 </div>
-                <div class="mt-6 h-40 rounded-2xl border-2 border-dashed border-brand/70"></div>
+                <div class="mt-6 h-40 rounded-2xl border-2 border-dashed border-brand/40 bg-white/5"></div>
               </div>
             </template>
             <template x-for="evento in eventos" :key="evento.id || evento.title">
-              <article class="event-card min-w-[280px] md:min-w-[320px] lg:min-w-[360px] snap-center bg-white rounded-3xl border border-white shadow-lg shadow-brand/20 p-6 flex flex-col gap-6">
+              <article class="event-card min-w-[280px] md:min-w-[320px] lg:min-w-[360px] snap-center bg-slate-900/70 rounded-3xl border border-white/10 shadow-xl shadow-black/50 p-6 flex flex-col gap-6">
                 <div class="space-y-4">
-                  <div class="h-40 rounded-2xl border-2 border-dashed border-brand/70 bg-brand-muted/50 overflow-hidden">
+                  <div class="h-40 rounded-2xl border border-brand/40 bg-black/30 overflow-hidden">
                     <template x-if="evento.image_url">
                       <img :src="evento.image_url" alt="" class="w-full h-full object-cover">
                     </template>
@@ -144,15 +205,15 @@
                     </div>
                   </div>
                   <div class="space-y-2">
-                    <span class="inline-flex items-center px-3 py-1 rounded-full bg-brand/60 text-slate-800 text-sm font-semibold" x-text="formatDate(evento.date)"></span>
-                    <h3 class="text-2xl font-semibold text-slate-900" x-text="evento.title"></h3>
-                    <p class="text-slate-600 event-description" x-text="evento.description"></p>
+                    <span class="inline-flex items-center px-3 py-1 rounded-full bg-brand/20 text-brand-dark text-sm font-semibold" x-text="formatDate(evento.date)"></span>
+                    <h3 class="text-2xl font-semibold text-white" x-text="evento.title"></h3>
+                    <p class="text-slate-300 event-description" x-text="evento.description"></p>
                   </div>
                 </div>
                 <div class="flex items-center justify-between">
                   <div class="space-y-1">
-                    <p class="text-sm text-slate-500" x-text="formatLocation(evento)"></p>
-                    <p class="text-base font-semibold text-brand-dark" x-text="formatPrice(evento)"></p>
+                    <p class="text-sm text-slate-400" x-text="formatLocation(evento)"></p>
+                    <p class="text-base font-semibold text-brand" x-text="formatPrice(evento)"></p>
                   </div>
                   <a :href="'event.html?id=' + encodeURIComponent(evento.id)" class="inline-flex items-center px-4 py-2 rounded-full bg-brand-dark text-white text-sm font-semibold shadow hover:bg-brand-dark/90 transition">
                     Detalhes
@@ -161,57 +222,57 @@
               </article>
             </template>
           </div>
-          <p x-show="mensagem" x-text="mensagem" class="text-sm text-slate-600 mt-3"></p>
+          <p x-show="mensagem" x-text="mensagem" class="text-sm text-slate-300 mt-3"></p>
         </div>
       </section>
 
       <!-- Sobre e recursos -->
       <section id="sobre" class="max-w-6xl mx-auto px-4 py-8 space-y-8">
         <div class="grid gap-6 lg:grid-cols-3">
-          <article class="lg:col-span-2 bg-white rounded-3xl border border-white shadow-sm p-6 space-y-4">
+          <article class="lg:col-span-2 bg-slate-900/70 rounded-3xl border border-white/10 shadow-xl shadow-black/50 p-6 space-y-4">
             <p class="text-sm font-semibold text-brand-dark uppercase tracking-wide">Por que usar o ShowMe?</p>
-            <h2 class="text-3xl font-bold text-slate-900">Conte a história do seu evento com a gente</h2>
-            <p class="text-slate-600">
-              A plataforma foi desenhada para conectar produtores independentes a quem ama experiências presenciais.
-              Os cadastros alimentam buscas em tempo real, ajudam na divulgação dos artistas e oferecem dados consistentes para o público.
+            <h2 class="text-3xl font-bold text-white">Conte a história do seu evento com a gente</h2>
+            <p class="text-slate-300">
+              A plataforma nasceu para conectar produtores independentes ao público que ama experiências presenciais.
+              Centralize cadastros, divulgue links e mantenha informações consistentes em tempo real.
             </p>
-            <ul class="space-y-2 text-slate-700">
+            <ul class="space-y-2 text-slate-200">
               <li class="flex items-start gap-2">
-                <span class="text-brand-dark mt-1">•</span>
-                <span>Sincronize eventos e estabelecimentos no mesmo fluxo.</span>
+                <span class="text-brand-dark mt-1">◆</span>
+                <span>Sincronize eventos e estabelecimentos no mesmo fluxo de publicação.</span>
               </li>
               <li class="flex items-start gap-2">
-                <span class="text-brand-dark mt-1">•</span>
-                <span>Compartilhe links diretos para a compra de ingressos.</span>
+                <span class="text-brand-dark mt-1">◆</span>
+                <span>Compartilhe links diretos para ingressos e canais oficiais.</span>
               </li>
               <li class="flex items-start gap-2">
-                <span class="text-brand-dark mt-1">•</span>
-                <span>Ofereça detalhes completos de endereço e capacidade.</span>
+                <span class="text-brand-dark mt-1">◆</span>
+                <span>Ofereça detalhes completos de endereço, capacidade e valores.</span>
               </li>
             </ul>
             <div class="flex flex-wrap gap-3 pt-2">
               <a href="search.html" class="px-5 py-2.5 rounded-full bg-brand-dark text-white font-semibold shadow hover:bg-brand-dark/90 transition">
                 Explorar eventos
               </a>
-              <a href="create-establishment.html" class="px-5 py-2.5 rounded-full border border-slate-200 text-slate-800 font-semibold hover:border-brand-dark hover:text-brand-dark transition">
+              <a href="create-establishment.html" class="px-5 py-2.5 rounded-full border border-white/20 text-white/80 font-semibold hover:border-brand hover:text-brand transition">
                 Cadastrar espaço
               </a>
             </div>
           </article>
-          <article id="faq" class="bg-white rounded-3xl border border-white shadow-sm p-6 space-y-4">
+          <article id="faq" class="bg-slate-900/70 rounded-3xl border border-white/10 shadow-xl shadow-black/50 p-6 space-y-4">
             <p class="text-sm font-semibold text-brand-dark uppercase tracking-wide">FAQ rápido</p>
-            <div class="space-y-3 text-sm text-slate-700">
+            <div class="space-y-3 text-sm text-slate-200">
               <div>
                 <p class="font-semibold">Como cadastro um evento?</p>
-                <p>Use o formulário em <a href="create-event.html" class="text-brand-dark underline">criar evento</a> e preencha todas as etapas.</p>
+                <p>Use o formulário em <a href="create-event.html" class="text-brand underline">criar evento</a> e siga as etapas obrigatórias.</p>
               </div>
               <div>
-                <p class="font-semibold">Posso cadastrar uma casa de eventos?</p>
-                <p>Sim, cadastre o espaço em <a href="create-establishment.html" class="text-brand-dark underline">criar estabelecimento</a> e selecione-o ao criar eventos.</p>
+                <p class="font-semibold">Posso cadastrar uma casa de shows?</p>
+                <p>Sim, registre o espaço em <a href="create-establishment.html" class="text-brand underline">criar estabelecimento</a> e vincule-o ao seu evento.</p>
               </div>
               <div>
-                <p class="font-semibold">E se eu não tiver ingressos online?</p>
-                <p>Informe no campo de descrição como o público pode garantir presença.</p>
+                <p class="font-semibold">E se não houver ingressos online?</p>
+                <p>Explique na descrição como o público pode garantir presença ou reservar lugares.</p>
               </div>
             </div>
           </article>
@@ -220,31 +281,35 @@
 
       <!-- CTA final -->
       <section class="max-w-5xl mx-auto px-4 pb-16">
-        <div class="rounded-3xl bg-gradient-to-r from-brand-dark to-lime-400 text-white p-10 flex flex-col lg:flex-row items-center gap-8">
-          <div class="flex-1 space-y-4">
+        <div class="rounded-3xl border border-white/10 bg-gradient-to-br from-brand-dark via-brand to-emerald-900 text-white p-10 flex flex-col lg:flex-row items-center gap-8 shadow-2xl shadow-black/50">
+          <div class="flex-1 space-y-4 text-center lg:text-left">
             <h2 class="text-3xl font-bold">Compartilhe seu evento com o mundo</h2>
             <p class="text-lg text-white/90">
-              Cadastre seu evento em poucos minutos e alcance milhares de pessoas que buscam experiências autênticas.
+              Cadastre em poucos minutos e alcance pessoas que procuram experiências autênticas e próximas de casa.
             </p>
           </div>
           <div class="flex flex-col sm:flex-row gap-4">
             <a :href="user ? 'create-event.html' : 'account.html'" class="px-6 py-3 rounded-full bg-white text-brand-dark font-semibold shadow hover:bg-white/90 transition">
               <span x-text="user ? 'Cadastrar agora' : 'Entrar para cadastrar'"></span>
             </a>
-            <a :href="user ? 'create-establishment.html' : 'account.html'" class="px-6 py-3 rounded-full border border-white/70 text-white font-semibold hover:bg-white/10 transition">
+            <a :href="user ? 'create-establishment.html' : 'account.html'" class="px-6 py-3 rounded-full border border-white/60 text-white font-semibold hover:bg-white/10 transition">
               <span x-text="user ? 'Registrar espaço' : 'Entrar para registrar'"></span>
             </a>
           </div>
         </div>
       </section>
-
     </main>
 
     <!-- Footer -->
-    <footer class="bg-slate-900 text-white mt-auto">
+    <footer class="bg-slate-950 text-white mt-auto">
       <div class="max-w-6xl mx-auto px-4 py-10 grid gap-8 md:grid-cols-3">
         <div class="space-y-3">
-          <div class="w-12 h-12 rounded-full border-2 border-white/60 border-dashed"></div>
+          <div class="flex items-center gap-3">
+            <div class="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center shrink-0">
+              <img src="assets/logo.png" alt="Logo ShowMe" class="w-full h-full object-cover">
+            </div>
+            <span class="text-xl font-semibold tracking-tight">ShowMe</span>
+          </div>
           <p class="text-sm text-white/70">ShowMe conecta você aos melhores eventos independentes da sua região.</p>
         </div>
         <div>
